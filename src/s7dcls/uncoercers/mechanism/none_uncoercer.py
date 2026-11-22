@@ -1,0 +1,17 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from s7dcls.uncoercers.models import UncoerceResult
+from s7dcls.uncoercers.protocol import UncoercerProtocol
+
+
+@dataclass(kw_only=True, frozen=True)
+class NoneUncoercer(UncoercerProtocol):
+    def __call__(self, *, value):
+        if value is None:
+            return UncoerceResult(value=None)
+        return None
+
+
+__all__ = ["NoneUncoercer"]

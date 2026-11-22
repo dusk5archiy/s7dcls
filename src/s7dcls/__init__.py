@@ -2,6 +2,8 @@ from .coercers import *
 from .dataclass_fetchers import *
 from .dataclass_hydrators import *
 from .dict_fetchers import *
+from .uncoercers import *
+from .dataclass_dehydrators import *
 from .string_dict_dataclass_hydrators import *
 from .string_manipulations import *
 from .type_emitters import *
