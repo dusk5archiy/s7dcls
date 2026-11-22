@@ -6,6 +6,7 @@ from .uncoercers import *
 from .dataclass_dehydrators import *
 from .string_dict_dataclass_hydrators import *
 from .string_manipulations import *
+from .type_describers import *
 from .type_emitters import *
 from .type_hints import *
 from .validators import *
