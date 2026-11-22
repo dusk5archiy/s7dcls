@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -19,7 +20,15 @@ from .protocol import StrictTypeDescriberProtocol, TypeDescriberProtocol
 
 
 class StandardTypeDescriber(StrictTypeDescriberProtocol):
-    def __init__(self) -> None:
+    @dataclass(kw_only=True, frozen=True)
+    class Args:
+        include_docstrings: bool = False
+
+        def build(self) -> StandardTypeDescriber:
+            return StandardTypeDescriber(self)
+
+    def __init__(self, args: Args | None = None) -> None:
+        active_args = args or StandardTypeDescriber.Args()
         self.describers: tuple[TypeDescriberProtocol, ...] = (
             AnyTypeDescriber(),
             AnnotatedTypeDescriber(inner_type_describer=self),
@@ -34,7 +43,10 @@ class StandardTypeDescriber(StrictTypeDescriberProtocol):
             ListTypeDescriber(inner_type_describer=self),
             TupleTypeDescriber(inner_type_describer=self),
             DictTypeDescriber(inner_type_describer=self),
-            DataclassTypeDescriber(inner_type_describer=self),
+            DataclassTypeDescriber(
+                inner_type_describer=self,
+                include_docstrings=active_args.include_docstrings,
+            ),
         )
 
     def __call__(self, *, dtype: Any) -> dict[str, Any]:
