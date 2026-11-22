@@ -11,3 +11,6 @@ class ValidatorProtocol(Protocol):
 
 class StrictValidatorProtocol(ValidatorProtocol, Protocol):
     def __call__(self, *, value: Any, dtype: Any) -> ValidateResult: ...
+
+
+__all__ = ["StrictValidatorProtocol", "ValidatorProtocol"]

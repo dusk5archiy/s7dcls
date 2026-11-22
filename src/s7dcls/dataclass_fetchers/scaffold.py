@@ -21,3 +21,6 @@ class ScaffoldSourceDataclassFetcher[T: DataclassInstance](DataclassEmitterProto
     def __call__(self):
         data = self.dict_emitter()
         return self.string_dict_dataclass_hydrator(datacls=self.datacls, data=data)
+
+
+__all__ = ["ScaffoldSourceDataclassFetcher"]

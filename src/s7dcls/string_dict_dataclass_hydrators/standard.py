@@ -43,3 +43,6 @@ class StandardStringDictDataclassHydrator(StringDictDataclassHydratorProtocol):
             coercer=self.coercer,
             extra_keys_allowed=args.extra_keys_allowed,
         )
+
+
+__all__ = ["StandardStringDictDataclassHydrator"]

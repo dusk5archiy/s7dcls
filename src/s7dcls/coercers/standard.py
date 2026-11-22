@@ -134,4 +134,4 @@ class StandardCoercer(StrictJsonCoercerProtocol):
         raise TypeError({"value": value, "expected_type": str(dtype)})
 
 
-__all__ = ["StandardCoercer"]
+__all__ = ["CoercerMode", "StandardCoercer"]

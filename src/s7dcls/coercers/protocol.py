@@ -20,3 +20,11 @@ class JsonCoercerProtocol(CoercerProtocol, Protocol):
 class StrictJsonCoercerProtocol(
     StrictCoercerProtocol, JsonCoercerProtocol, Protocol
 ): ...
+
+
+__all__ = [
+    "CoercerProtocol",
+    "JsonCoercerProtocol",
+    "StrictCoercerProtocol",
+    "StrictJsonCoercerProtocol",
+]

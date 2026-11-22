@@ -35,4 +35,4 @@ class SequenceDictFetcher(DictFetcherProtocol):
         return data
 
 
-__all__ = ["ScaffoldDictFetcher"]
+__all__ = ["ScaffoldDictFetcher", "SequenceDictFetcher"]

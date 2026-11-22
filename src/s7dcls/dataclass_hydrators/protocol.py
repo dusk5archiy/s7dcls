@@ -17,3 +17,6 @@ class DataclassHydratorProtocol(Protocol):
         coercer: CoercerProtocol,
         extra_keys_allowed: bool,
     ) -> T: ...
+
+
+__all__ = ["DataclassHydratorProtocol"]

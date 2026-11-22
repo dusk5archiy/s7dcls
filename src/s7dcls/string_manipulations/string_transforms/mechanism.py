@@ -25,3 +25,6 @@ class PrefixRemover(StringTransformProtocol):
 class UpperTransform(StringTransformProtocol):
     def __call__(self, string):
         return string.upper()
+
+
+__all__ = ["LeftStripNCharsTransform", "PrefixRemover", "UpperTransform"]

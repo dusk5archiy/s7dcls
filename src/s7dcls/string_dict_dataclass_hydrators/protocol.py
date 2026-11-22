@@ -10,3 +10,6 @@ class StringDictDataclassHydratorProtocol(Protocol):
     def __call__[T: DataclassInstance](
         self, *, datacls: type[T], data: dict[str, str]
     ) -> T: ...
+
+
+__all__ = ["StringDictDataclassHydratorProtocol"]

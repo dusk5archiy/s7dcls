@@ -7,3 +7,6 @@ from typing import Any
 @dataclass(kw_only=True, frozen=True)
 class CoerceResult:
     value: Any
+
+
+__all__ = ["CoerceResult"]

@@ -13,3 +13,6 @@ class SequenceTransform(StringTransformProtocol):
             string = transform(string)
 
         return string
+
+
+__all__ = ["SequenceTransform"]

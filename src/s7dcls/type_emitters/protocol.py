@@ -24,3 +24,12 @@ class TransformProtocol[T](Protocol):
 
 class SwallowerProtocol[T](Protocol):
     def __call__(self, x: T) -> None: ...
+
+
+__all__ = [
+    "DataclassEmitterProtocol",
+    "EmitterProtocol",
+    "FunctionProtocol",
+    "SwallowerProtocol",
+    "TransformProtocol",
+]

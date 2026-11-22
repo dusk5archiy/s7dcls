@@ -16,3 +16,6 @@ class NoCasePrefixGate(FunctionProtocol[str, str | None]):
             return string[len(self.prefix) :]
 
         return None
+
+
+__all__ = ["NoCasePrefixGate"]

@@ -50,3 +50,6 @@ class StandardDataclassFetcher[T: DataclassInstance](DataclassEmitterProtocol[T]
 
     def __call__(self):
         return self.parent()
+
+
+__all__ = ["StandardDataclassFetcher"]

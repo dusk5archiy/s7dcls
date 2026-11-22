@@ -59,3 +59,11 @@ class StandardJsonDictFetcher(DictFetcherProtocol):
             dict_fetcher=RawJsonDictFetcher(file=self.file),
             key_gate=NoCasePrefixGate(prefix=self.prefix),
         )()
+
+
+__all__ = [
+    "RawJsonDictFetcher",
+    "RawShellDictFetcher",
+    "StandardJsonDictFetcher",
+    "StandardShellDictFetcher",
+]

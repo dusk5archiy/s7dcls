@@ -69,3 +69,6 @@ class ScaffoldDataclassHydrator(DataclassHydratorProtocol):
             kwargs[_definition.name] = _result.value
 
         return datacls(**kwargs)
+
+
+__all__ = ["ScaffoldDataclassHydrator"]
