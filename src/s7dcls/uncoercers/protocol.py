@@ -9,8 +9,8 @@ class UncoercerProtocol(Protocol):
     def __call__(self, *, value: Any) -> UncoerceResult | None: ...
 
 
-class StrictUncoercerProtocol(UncoercerProtocol, Protocol):
-    def __call__(self, *, value: Any) -> UncoerceResult: ...
+class StrictUncoercerProtocol(Protocol):
+    def __call__(self, *, value: Any) -> Any: ...
 
 
 __all__ = ["StrictUncoercerProtocol", "UncoercerProtocol"]

@@ -32,7 +32,7 @@ class ListCoercer(JsonCoercerProtocol):
 
         elem_type = get_args(dtype)[0]
         _results = [
-            self.inner_coercer(value=item, dtype=elem_type).value for item in value
+            self.inner_coercer(value=item, dtype=elem_type) for item in value
         ]
         return CoerceResult(value=_results)
 

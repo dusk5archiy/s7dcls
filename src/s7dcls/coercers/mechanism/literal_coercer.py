@@ -19,10 +19,10 @@ class LiteralCoercer(CoercerProtocol):
         for choice in allowed:
             if self.inner_coercer is not None:
                 try:
-                    result = self.inner_coercer(value=value, dtype=type(choice))
+                    coerced = self.inner_coercer(value=value, dtype=type(choice))
                 except (ValueError, TypeError):
                     continue
-                if result.value == choice and type(result.value) is type(choice):
+                if coerced == choice and type(coerced) is type(choice):
                     return CoerceResult(value=choice)
             elif value == choice and type(value) is type(choice):
                 return CoerceResult(value=choice)

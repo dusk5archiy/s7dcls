@@ -15,7 +15,6 @@ from .mechanism import (
     TypeInstanceDescriber,
     UnionTypeDescriber,
 )
-from .models import DescribeTypeResult
 from .protocol import StrictTypeDescriberProtocol, TypeDescriberProtocol
 
 
@@ -38,11 +37,11 @@ class StandardTypeDescriber(StrictTypeDescriberProtocol):
             DataclassTypeDescriber(inner_type_describer=self),
         )
 
-    def __call__(self, *, dtype: Any) -> DescribeTypeResult:
+    def __call__(self, *, dtype: Any) -> dict[str, Any]:
         for describer in self.describers:
             result = describer(dtype=dtype)
             if result is not None:
-                return result
+                return result.schema
         raise TypeError({"dtype": str(dtype)})
 
 

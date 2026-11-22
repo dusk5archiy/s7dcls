@@ -34,7 +34,7 @@ class TupleCoercer(JsonCoercerProtocol):
         if len(args) == 2 and args[1] is Ellipsis:
             _dtype = args[0]
             _results = [
-                self.inner_coercer(value=item, dtype=_dtype).value for item in value
+                self.inner_coercer(value=item, dtype=_dtype) for item in value
             ]
             return CoerceResult(value=tuple(_results))
 
@@ -47,7 +47,7 @@ class TupleCoercer(JsonCoercerProtocol):
             raise ValueError({"value": value, "expected_type": str(dtype)})
 
         _results = [
-            self.inner_coercer(value=item, dtype=arg_type).value
+            self.inner_coercer(value=item, dtype=arg_type)
             for item, arg_type in zip(value, args, strict=True)
         ]
         return CoerceResult(value=tuple(_results))

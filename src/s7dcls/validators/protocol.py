@@ -9,8 +9,8 @@ class ValidatorProtocol(Protocol):
     def __call__(self, *, value: Any, dtype: Any) -> ValidateResult | None: ...
 
 
-class StrictValidatorProtocol(ValidatorProtocol, Protocol):
-    def __call__(self, *, value: Any, dtype: Any) -> ValidateResult: ...
+class StrictValidatorProtocol(Protocol):
+    def __call__(self, *, value: Any, dtype: Any) -> None: ...
 
 
 __all__ = ["StrictValidatorProtocol", "ValidatorProtocol"]

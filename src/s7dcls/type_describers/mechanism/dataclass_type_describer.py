@@ -23,7 +23,7 @@ class DataclassTypeDescriber(TypeDescriberProtocol):
                 "name": definition.name,
                 "schema": self.inner_type_describer(
                     dtype=type_hints.get(definition.name, definition.type)
-                ).schema,
+                ),
             }
             for definition in fields(dtype)
             if definition.init

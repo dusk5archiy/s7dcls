@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Protocol
 
-from s7dcls.coercers.protocol import CoercerProtocol
+from s7dcls.coercers.protocol import StrictCoercerProtocol
 
 if TYPE_CHECKING:
     from _typeshed import DataclassInstance
@@ -14,7 +14,7 @@ class DataclassHydratorProtocol(Protocol):
         *,
         datacls: type[T],
         data: dict[str, Any],
-        coercer: CoercerProtocol,
+        coercer: StrictCoercerProtocol,
         extra_keys_allowed: bool,
     ) -> T: ...
 

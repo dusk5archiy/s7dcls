@@ -36,11 +36,11 @@ class StandardValidator(StrictValidatorProtocol):
             DataclassValidator(inner_validator=self),
         )
 
-    def __call__(self, *, value, dtype):
+    def __call__(self, *, value, dtype) -> None:
         for validator in self.validators:
             result = validator(value=value, dtype=dtype)
             if result is not None:
-                return result
+                return None
 
         raise TypeError({"value": value, "expected_type": str(dtype)})
 

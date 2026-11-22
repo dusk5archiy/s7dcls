@@ -9,8 +9,8 @@ class TypeDescriberProtocol(Protocol):
     def __call__(self, *, dtype: Any) -> DescribeTypeResult | None: ...
 
 
-class StrictTypeDescriberProtocol(TypeDescriberProtocol, Protocol):
-    def __call__(self, *, dtype: Any) -> DescribeTypeResult: ...
+class StrictTypeDescriberProtocol(Protocol):
+    def __call__(self, *, dtype: Any) -> dict[str, Any]: ...
 
 
 __all__ = ["StrictTypeDescriberProtocol", "TypeDescriberProtocol"]

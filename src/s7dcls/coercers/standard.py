@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
-from s7dcls.coercers.models import CoerceResult
+from .models import CoerceResult
 from s7dcls.coercers.protocol import (
     CoercerProtocol,
     JsonCoercerProtocol,
@@ -115,15 +115,15 @@ class StandardCoercer(StrictJsonCoercerProtocol):
             coercer.can_handle(dtype=dtype) for coercer in self.container_coercers
         )
 
-    def __call__(self, *, value: Any, dtype: Any) -> CoerceResult:
+    def __call__(self, *, value: Any, dtype: Any) -> Any:
         args = self.args
         if args.mode == "json" and dtype is Any:
-            return CoerceResult(value=value)
+            return value
 
         for coercer in self.coercers:
             _result = coercer(value=value, dtype=dtype)
             if _result is not None:
-                return _result
+                return _result.value
 
         if args.mode == "json" and args.string_fallback is not None:
             return args.string_fallback(

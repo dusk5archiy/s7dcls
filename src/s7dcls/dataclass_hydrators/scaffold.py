@@ -62,11 +62,7 @@ class ScaffoldDataclassHydrator(DataclassHydratorProtocol):
                 continue
 
             _dtype = type_hints.get(_definition.name, _definition.type)
-            _result = coercer(value=data_value, dtype=_dtype)
-            if _result is None:
-                raise TypeError({"value": data_value, "expected_type": str(_dtype)})
-
-            kwargs[_definition.name] = _result.value
+            kwargs[_definition.name] = coercer(value=data_value, dtype=_dtype)
 
         return datacls(**kwargs)
 

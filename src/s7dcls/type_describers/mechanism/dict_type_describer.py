@@ -17,12 +17,12 @@ class DictTypeDescriber(TypeDescriberProtocol):
 
         args = get_args(dtype)
         key_schema = (
-            self.inner_type_describer(dtype=args[0]).schema
+            self.inner_type_describer(dtype=args[0])
             if len(args) >= 1
             else {"type": "str"}
         )
         value_schema = (
-            self.inner_type_describer(dtype=args[1]).schema
+            self.inner_type_describer(dtype=args[1])
             if len(args) >= 2
             else {"type": "any"}
         )

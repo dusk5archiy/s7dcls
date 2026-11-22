@@ -27,7 +27,7 @@ class ScaffoldDataclassDehydrator(DataclassDehydratorProtocol):
                 key = self.class_key_projection(key)
 
             raw_value = getattr(instance, definition.name)
-            result[key] = uncoercer(value=raw_value).value
+            result[key] = uncoercer(value=raw_value)
 
         return result
 

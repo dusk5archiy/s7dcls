@@ -20,7 +20,7 @@ class TupleTypeDescriber(TypeDescriberProtocol):
             return DescribeTypeResult(
                 schema={
                     "type": "array",
-                    "items": self.inner_type_describer(dtype=args[0]).schema,
+                    "items": self.inner_type_describer(dtype=args[0]),
                 }
             )
         if args:
@@ -28,7 +28,7 @@ class TupleTypeDescriber(TypeDescriberProtocol):
                 schema={
                     "type": "tuple",
                     "items": [
-                        self.inner_type_describer(dtype=arg).schema for arg in args
+                        self.inner_type_describer(dtype=arg) for arg in args
                     ],
                 }
             )

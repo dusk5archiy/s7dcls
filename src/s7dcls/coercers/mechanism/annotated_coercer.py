@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Annotated, get_args, get_origin
 
+from s7dcls.coercers.models import CoerceResult
 from s7dcls.coercers.protocol import CoercerProtocol, StrictCoercerProtocol
 from s7dcls.value_checkers.protocol import ValueCheckerProtocol
 
@@ -16,13 +17,13 @@ class AnnotatedCoercer(CoercerProtocol):
             return None
 
         base_type, *extras = get_args(dtype)
-        result = self.inner_coercer(value=value, dtype=base_type)
+        coerced = self.inner_coercer(value=value, dtype=base_type)
 
         for extra in extras:
             if isinstance(extra, ValueCheckerProtocol):
-                extra(result.value)
+                extra(coerced)
 
-        return result
+        return CoerceResult(value=coerced)
 
 
 __all__ = ["AnnotatedCoercer"]

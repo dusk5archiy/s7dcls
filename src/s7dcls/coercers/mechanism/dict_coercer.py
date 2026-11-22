@@ -33,9 +33,9 @@ class DictCoercer(JsonCoercerProtocol):
         key_type, val_type = get_args(dtype)
         _results = {}
         for k, v in value.items():
-            _key_result = self.inner_coercer(value=k, dtype=key_type)
-            _value_result = self.inner_coercer(value=v, dtype=val_type)
-            _results[_key_result.value] = _value_result.value
+            _key = self.inner_coercer(value=k, dtype=key_type)
+            _val = self.inner_coercer(value=v, dtype=val_type)
+            _results[_key] = _val
 
         return CoerceResult(value=_results)
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from s7dcls.coercers.protocol import CoercerProtocol
+from s7dcls.coercers.protocol import StrictCoercerProtocol
 from s7dcls.coercers.standard import StandardCoercer
 from s7dcls.dataclass_hydrators.protocol import DataclassHydratorProtocol
 from s7dcls.dataclass_hydrators.scaffold import ScaffoldDataclassHydrator
@@ -19,7 +19,7 @@ class StandardStringDictDataclassHydrator(StringDictDataclassHydratorProtocol):
     @dataclass(kw_only=True, frozen=True)
     class Args:
         dataclass_hydrator: DataclassHydratorProtocol | None = None
-        coercer: CoercerProtocol | None = None
+        coercer: StrictCoercerProtocol | None = None
         extra_keys_allowed: bool = False
 
         def build(self):

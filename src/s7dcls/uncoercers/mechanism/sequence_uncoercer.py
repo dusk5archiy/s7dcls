@@ -14,7 +14,7 @@ class SequenceUncoercer(UncoercerProtocol):
         if not isinstance(value, (list, tuple)):
             return None
         return UncoerceResult(
-            value=[self.inner_uncoercer(value=item).value for item in value]
+            value=[self.inner_uncoercer(value=item) for item in value]
         )
 
 

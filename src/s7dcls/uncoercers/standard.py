@@ -14,7 +14,6 @@ from .mechanism import (
     PrimitiveUncoercer,
     SequenceUncoercer,
 )
-from .models import UncoerceResult
 from .protocol import StrictUncoercerProtocol, UncoercerProtocol
 
 
@@ -42,11 +41,11 @@ class StandardUncoercer(StrictUncoercerProtocol):
             ),
         )
 
-    def __call__(self, *, value: Any) -> UncoerceResult:
+    def __call__(self, *, value: Any) -> Any:
         for uncoercer in self.uncoercers:
             result = uncoercer(value=value)
             if result is not None:
-                return result
+                return result.value
         raise TypeError({"value": value, "got_type": str(type(value))})
 
 

@@ -17,7 +17,7 @@ class ListTypeDescriber(TypeDescriberProtocol):
 
         args = get_args(dtype)
         items = (
-            self.inner_type_describer(dtype=args[0]).schema
+            self.inner_type_describer(dtype=args[0])
             if args
             else {"type": "any"}
         )

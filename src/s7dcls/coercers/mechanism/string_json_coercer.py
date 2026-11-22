@@ -4,6 +4,7 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
+from s7dcls.coercers.models import CoerceResult
 from s7dcls.coercers.protocol import CoercerProtocol, StrictJsonCoercerProtocol
 
 
@@ -34,7 +35,7 @@ class StringJsonCoercer(CoercerProtocol):
                 {"value": value, "expected_type": str(dtype), "e": e}
             ) from e
 
-        return self.json_coercer(value=parsed, dtype=dtype)
+        return CoerceResult(value=self.json_coercer(value=parsed, dtype=dtype))
 
 
 __all__ = ["StringJsonCoercer"]

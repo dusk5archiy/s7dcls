@@ -26,7 +26,7 @@ class AnnotatedTypeDescriber(TypeDescriberProtocol):
             return None
 
         base_type, *extras = get_args(dtype)
-        schema = dict(self.inner_type_describer(dtype=base_type).schema)
+        schema = dict(self.inner_type_describer(dtype=base_type))
 
         for extra in extras:
             if isinstance(extra, IntervalRangeValueChecker):

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from types import UnionType
 from typing import Union, get_args, get_origin
 
+from ..models import ValidateResult
 from ..protocol import StrictValidatorProtocol, ValidatorProtocol
 
 
@@ -21,7 +22,8 @@ class UnionValidator(ValidatorProtocol):
 
         for arg in args:
             try:
-                return self.inner_validator(value=value, dtype=arg)
+                self.inner_validator(value=value, dtype=arg)
+                return ValidateResult()
             except (ValueError, TypeError) as e:
                 errors.append(e)
                 continue

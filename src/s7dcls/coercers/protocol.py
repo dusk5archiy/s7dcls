@@ -9,17 +9,16 @@ class CoercerProtocol(Protocol):
     def __call__(self, *, value: Any, dtype: Any) -> CoerceResult | None: ...
 
 
-class StrictCoercerProtocol(CoercerProtocol, Protocol):
-    def __call__(self, *, value: Any, dtype: Any) -> CoerceResult: ...
+class StrictCoercerProtocol(Protocol):
+    def __call__(self, *, value: Any, dtype: Any) -> Any: ...
 
 
 class JsonCoercerProtocol(CoercerProtocol, Protocol):
     def can_handle(self, *, dtype: Any) -> bool: ...
 
 
-class StrictJsonCoercerProtocol(
-    StrictCoercerProtocol, JsonCoercerProtocol, Protocol
-): ...
+class StrictJsonCoercerProtocol(StrictCoercerProtocol, Protocol):
+    def can_handle(self, *, dtype: Any) -> bool: ...
 
 
 __all__ = [
