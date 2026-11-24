@@ -32,7 +32,7 @@ class StringJsonCoercer(CoercerProtocol):
             parsed = json.loads(value)
         except json.JSONDecodeError as e:
             raise ValueError(
-                {"value": value, "expected_type": str(dtype), "e": e}
+                {"value": value, "expected_type": str(dtype), "error": e}
             ) from e
 
         return CoerceResult(value=self.json_coercer(value=parsed, dtype=dtype))

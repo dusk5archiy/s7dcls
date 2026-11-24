@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from s7dcls.dataclass_dehydrators.protocol import DataclassDehydratorProtocol
-from s7dcls.dataclass_dehydrators.scaffold import ScaffoldDataclassDehydrator
+from s7dcls.dataclass_dehydrators.protocol import DataclassDehydratorFactoryProtocol
+from s7dcls.dataclass_dehydrators.scaffold import ScaffoldDataclassDehydratorFactory
 
 from .mechanism import (
     DataclassUncoercer,
@@ -14,39 +14,40 @@ from .mechanism import (
     PrimitiveUncoercer,
     SequenceUncoercer,
 )
-from .protocol import StrictUncoercerProtocol, UncoercerProtocol
+from .ops import FirstMatchUncoercer
+from .protocol import StrictUncoercerProtocol
+from .scaffold import RecursiveUncoercer
 
 
 class StandardUncoercer(StrictUncoercerProtocol):
     @dataclass(kw_only=True, frozen=True)
     class Args:
-        dataclass_dehydrator: DataclassDehydratorProtocol | None = None
+        dataclass_dehydrator_factory: DataclassDehydratorFactoryProtocol | None = None
 
         def build(self) -> StandardUncoercer:
             return StandardUncoercer(self)
 
-    def __init__(self, args: Args) -> None:
-        dataclass_dehydrator = (
-            args.dataclass_dehydrator or ScaffoldDataclassDehydrator()
+    def __init__(self, args: Args | None = None) -> None:
+        active_args = args or StandardUncoercer.Args()
+        dehydrator_factory = (
+            active_args.dataclass_dehydrator_factory
+            or ScaffoldDataclassDehydratorFactory()
         )
-        self.uncoercers: tuple[UncoercerProtocol, ...] = (
-            NoneUncoercer(),
-            PrimitiveUncoercer(),
-            PathUncoercer(),
-            SequenceUncoercer(inner_uncoercer=self),
-            DictUncoercer(inner_uncoercer=self),
-            DataclassUncoercer(
-                inner_uncoercer=self,
-                dataclass_dehydrator=dataclass_dehydrator,
-            ),
+        self.parent = RecursiveUncoercer(
+            uncoercer_recursion=lambda inner: FirstMatchUncoercer(
+                uncoercers=(
+                    NoneUncoercer(),
+                    PrimitiveUncoercer(),
+                    PathUncoercer(),
+                    SequenceUncoercer(inner_uncoercer=inner),
+                    DictUncoercer(inner_uncoercer=inner),
+                    DataclassUncoercer(dataclass_dehydrator=dehydrator_factory(inner)),
+                )
+            )
         )
 
     def __call__(self, *, value: Any) -> Any:
-        for uncoercer in self.uncoercers:
-            result = uncoercer(value=value)
-            if result is not None:
-                return result.value
-        raise TypeError({"value": value, "got_type": str(type(value))})
+        return self.parent(value=value)
 
 
 __all__ = ["StandardUncoercer"]

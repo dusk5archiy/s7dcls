@@ -17,7 +17,7 @@ def validate[T](
 ) -> type[T]:
     """Dataclass decorator that validates init fields after __init__."""
     if not is_dataclass(cls):
-        raise TypeError({"cls": cls, "reason": "must be a dataclass"})
+        raise TypeError({"dtype": str(cls), "expected_type": "dataclass"})
 
     active_validator = validator or StandardValidator()
     type_hints = get_cached_type_hints(cls)

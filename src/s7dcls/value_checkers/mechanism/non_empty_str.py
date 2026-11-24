@@ -11,10 +11,16 @@ class NonEmptyStr(ValueCheckerProtocol):
 
     def __call__(self, value) -> None:
         if not isinstance(value, str):
-            raise TypeError({"value": value, "expected_type": str(str)})
+            raise TypeError(
+                {
+                    "value": value,
+                    "expected_type": str(str),
+                    "got_type": str(type(value)),
+                }
+            )
         target = value.strip() if self.strip else value
         if not target:
-            raise ValueError({"value": value, "reason": "must not be empty"})
+            raise ValueError({"value": value, "constraint": "non_empty"})
 
 
 __all__ = ["NonEmptyStr"]

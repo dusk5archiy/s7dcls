@@ -1,4 +1,5 @@
 from .annotated_coercer import *
+from .any_coercer import *
 from .dataclass_coercer import *
 from .dict_coercer import *
 from .list_coercer import *

@@ -1,23 +1,23 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
 
-from .models import CoerceResult
+from s7dcls.coercers.ops import FirstMatchCoercer
 from s7dcls.coercers.protocol import (
     CoercerProtocol,
     JsonCoercerProtocol,
     StrictCoercerProtocol,
     StrictJsonCoercerProtocol,
 )
-from s7dcls.dataclass_hydrators.protocol import DataclassHydratorProtocol
-from s7dcls.dataclass_hydrators.scaffold import ScaffoldDataclassHydrator
-from s7dcls.validators.mechanism import LiteralValidator
+from s7dcls.coercers.scaffold import RecursiveCoercer
+from s7dcls.dataclass_hydrators.protocol import DataclassHydratorFactoryProtocol
+from s7dcls.dataclass_hydrators.scaffold import ScaffoldDataclassHydratorFactory
 
 from .mechanism import (
     AnnotatedCoercer,
+    AnyCoercer,
     DataclassCoercer,
     DictCoercer,
     ListCoercer,
@@ -34,53 +34,36 @@ from .mechanism import (
 )
 
 
-def _to_coercer_string(value: Any) -> str:
-    if value is None:
-        return "null"
-    if isinstance(value, (dict, list)):
-        return json.dumps(value)
-    return str(value)
-
-
-CoercerMode = Literal["json", "string"]
-
-
-class StandardCoercer(StrictJsonCoercerProtocol):
+class StandardJsonCoercer(StrictJsonCoercerProtocol):
     @dataclass(kw_only=True, frozen=True)
     class Args:
-        mode: CoercerMode = "string"
-        dataclass_hydrator: DataclassHydratorProtocol | None = None
-        string_fallback: StrictCoercerProtocol | None = None
+        dataclass_hydrator_factory: DataclassHydratorFactoryProtocol | None = None
 
-        def __post_init__(self) -> None:
-            LiteralValidator()(value=self.mode, dtype=CoercerMode)
+        def build(self) -> StrictJsonCoercerProtocol:
+            return StandardJsonCoercer(self)
 
-        def build(self) -> StandardCoercer:
-            return StandardCoercer(self)
+    def __init__(self, args: Args | None = None) -> None:
+        active_args = args or StandardJsonCoercer.Args()
+        hydrator_factory = (
+            active_args.dataclass_hydrator_factory or ScaffoldDataclassHydratorFactory()
+        )
+        container_coercers: list[JsonCoercerProtocol] = []
 
-    def __init__(self, args: Args) -> None:
-        self.args = args
-        dataclass_hydrator = args.dataclass_hydrator or ScaffoldDataclassHydrator()
-        self.container_coercers: list[JsonCoercerProtocol] = []
-        self.coercers: list[CoercerProtocol] = []
-        if args.mode == "json":
-            self.container_coercers.extend(
-                (
-                    DictCoercer(inner_coercer=self),
-                    ListCoercer(inner_coercer=self),
-                    TupleCoercer(inner_coercer=self),
-                    DataclassCoercer(
-                        inner_coercer=self,
-                        dataclass_hydrator=dataclass_hydrator,
-                    ),
-                )
+        def build_coercer(inner: StrictCoercerProtocol) -> CoercerProtocol:
+            containers: tuple[JsonCoercerProtocol, ...] = (
+                DictCoercer(inner_coercer=inner),
+                ListCoercer(inner_coercer=inner),
+                TupleCoercer(inner_coercer=inner),
+                DataclassCoercer(dataclass_hydrator=hydrator_factory(inner)),
             )
-            self.coercers.extend(
-                (
-                    AnnotatedCoercer(inner_coercer=self),
-                    UnionCoercer(inner_coercer=self),
-                    LiteralCoercer(inner_coercer=self),
-                    *self.container_coercers,
+            container_coercers.extend(containers)
+            return FirstMatchCoercer(
+                coercers=(
+                    AnyCoercer(),
+                    AnnotatedCoercer(inner_coercer=inner),
+                    UnionCoercer(inner_coercer=inner),
+                    LiteralCoercer(inner_coercer=inner),
+                    *containers,
                     NoneCoercer(),
                     TypeInstanceCoercer(datatype=bool),
                     TypeInstanceCoercer(datatype=int),
@@ -89,17 +72,38 @@ class StandardCoercer(StrictJsonCoercerProtocol):
                     PathCoercer(),
                 )
             )
-        elif args.mode == "string":
-            json_coercer = StandardCoercer.Args(
-                mode="json",
-                dataclass_hydrator=dataclass_hydrator,
-                string_fallback=self,
-            ).build()
-            self.coercers.extend(
-                (
-                    AnnotatedCoercer(inner_coercer=self),
-                    UnionCoercer(inner_coercer=self),
-                    LiteralCoercer(inner_coercer=self),
+
+        self.parent = RecursiveCoercer(coercer_recursion=build_coercer)
+        self.container_coercers = tuple(container_coercers)
+
+    def can_handle(self, *, dtype: Any) -> bool:
+        return any(
+            coercer.can_handle(dtype=dtype) for coercer in self.container_coercers
+        )
+
+    def __call__(self, *, value: Any, dtype: Any) -> Any:
+        return self.parent(value=value, dtype=dtype)
+
+
+class StandardStringCoercer(StrictCoercerProtocol):
+    @dataclass(kw_only=True, frozen=True)
+    class Args:
+        dataclass_hydrator_factory: DataclassHydratorFactoryProtocol | None = None
+
+        def build(self) -> StrictCoercerProtocol:
+            return StandardStringCoercer(self)
+
+    def __init__(self, args: Args | None = None) -> None:
+        active_args = args or StandardStringCoercer.Args()
+        json_coercer = StandardJsonCoercer.Args(
+            dataclass_hydrator_factory=active_args.dataclass_hydrator_factory,
+        ).build()
+        self.parent = RecursiveCoercer(
+            coercer_recursion=lambda inner: FirstMatchCoercer(
+                coercers=(
+                    AnnotatedCoercer(inner_coercer=inner),
+                    UnionCoercer(inner_coercer=inner),
+                    LiteralCoercer(inner_coercer=inner),
                     StringBoolCoercer(),
                     StringTypeCallCoercer(datatype=int),
                     StringTypeCallCoercer(datatype=float),
@@ -109,29 +113,13 @@ class StandardCoercer(StrictJsonCoercerProtocol):
                     StringNoneCoercer(),
                 )
             )
-
-    def can_handle(self, *, dtype: Any) -> bool:
-        return any(
-            coercer.can_handle(dtype=dtype) for coercer in self.container_coercers
         )
 
     def __call__(self, *, value: Any, dtype: Any) -> Any:
-        args = self.args
-        if args.mode == "json" and dtype is Any:
-            return value
-
-        for coercer in self.coercers:
-            _result = coercer(value=value, dtype=dtype)
-            if _result is not None:
-                return _result.value
-
-        if args.mode == "json" and args.string_fallback is not None:
-            return args.string_fallback(
-                value=_to_coercer_string(value),
-                dtype=dtype,
-            )
-
-        raise TypeError({"value": value, "expected_type": str(dtype)})
+        return self.parent(value=value, dtype=dtype)
 
 
-__all__ = ["CoercerMode", "StandardCoercer"]
+__all__ = [
+    "StandardJsonCoercer",
+    "StandardStringCoercer",
+]

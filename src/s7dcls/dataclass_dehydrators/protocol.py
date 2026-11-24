@@ -9,12 +9,13 @@ if TYPE_CHECKING:
 
 
 class DataclassDehydratorProtocol(Protocol):
+    def __call__(self, *, instance: DataclassInstance) -> dict[str, Any]: ...
+
+
+class DataclassDehydratorFactoryProtocol(Protocol):
     def __call__(
-        self,
-        *,
-        instance: DataclassInstance,
-        uncoercer: StrictUncoercerProtocol,
-    ) -> dict[str, Any]: ...
+        self, uncoercer: StrictUncoercerProtocol, /
+    ) -> DataclassDehydratorProtocol: ...
 
 
-__all__ = ["DataclassDehydratorProtocol"]
+__all__ = ["DataclassDehydratorFactoryProtocol", "DataclassDehydratorProtocol"]

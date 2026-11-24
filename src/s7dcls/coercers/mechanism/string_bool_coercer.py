@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from s7dcls.coercers.models import CoerceResult
 from s7dcls.coercers.protocol import CoercerProtocol
@@ -11,7 +12,7 @@ class StringBoolCoercer(CoercerProtocol):
     trues: tuple[str, ...] = ("1", "true", "yes", "on")
     falses: tuple[str, ...] = ("0", "false", "no", "off")
 
-    def __call__(self, *, value, dtype):
+    def __call__(self, *, value: Any, dtype: Any) -> CoerceResult[bool] | None:
         if dtype is not bool:
             return None
 

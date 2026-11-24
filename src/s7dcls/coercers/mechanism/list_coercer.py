@@ -14,7 +14,7 @@ class ListCoercer(JsonCoercerProtocol):
     def can_handle(self, *, dtype: Any) -> bool:
         return dtype is list or get_origin(dtype) is list
 
-    def __call__(self, *, value, dtype):
+    def __call__(self, *, value: Any, dtype: Any) -> CoerceResult[list[Any]] | None:
         if dtype is not list and get_origin(dtype) is not list:
             return None
 
@@ -31,9 +31,7 @@ class ListCoercer(JsonCoercerProtocol):
             return CoerceResult(value=list(value))
 
         elem_type = get_args(dtype)[0]
-        _results = [
-            self.inner_coercer(value=item, dtype=elem_type) for item in value
-        ]
+        _results = [self.inner_coercer(value=item, dtype=elem_type) for item in value]
         return CoerceResult(value=_results)
 
 

@@ -27,9 +27,7 @@ class TupleTypeDescriber(TypeDescriberProtocol):
             return DescribeTypeResult(
                 schema={
                     "type": "tuple",
-                    "items": [
-                        self.inner_type_describer(dtype=arg) for arg in args
-                    ],
+                    "items": [self.inner_type_describer(dtype=arg) for arg in args],
                 }
             )
         return DescribeTypeResult(schema={"type": "array", "items": {"type": "any"}})

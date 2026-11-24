@@ -1,69 +1,76 @@
 from __future__ import annotations
 
-import json
-import os
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, TypeGuard
+from typing import Any
 
-from s7dcls.string_manipulations.string_gates.mechanism import NoCasePrefixGate
+from s7dcls.dict_transforms.mechanism import (
+    KeyGateDictTransform,
+    KeyPathDictTransform,
+)
+from s7dcls.file_dict_loaders.standard import StandardFileDictLoader
+from s7dcls.string_manipulations.string_gates.protocol import StringGateProtocol
 
+from .mechanism import RawFileDictFetcher, RawShellDictFetcher
+from .ops import DecoratedDictFetcher
 from .protocol import DictFetcherProtocol
-from .scaffold import ScaffoldDictFetcher
 
 
-def is_dict_str_str(obj: Any) -> TypeGuard[dict[str, str]]:
-    return isinstance(obj, dict) and all(
-        isinstance(k, str) and isinstance(v, str) for k, v in obj.items()
-    )
-
-
-@dataclass(kw_only=True, frozen=True)
-class RawShellDictFetcher(DictFetcherProtocol):
-    def __call__(self):
-        return dict(os.environ.items())
-
-
-@dataclass(kw_only=True, frozen=True)
-class RawJsonDictFetcher(DictFetcherProtocol):
-    file: Path
-
-    def __call__(self):
-        if not self.file.is_file():
-            _json_object = {}
-        else:
-            _json_object = json.loads(self.file.read_text())
-        if not is_dict_str_str(_json_object):
-            raise ValueError({"file": self.file, "expected_type": str(dict[str, str])})
-        return _json_object
-
-
-@dataclass(kw_only=True, frozen=True)
 class StandardShellDictFetcher(DictFetcherProtocol):
-    prefix: str = ""
+    @dataclass(kw_only=True, frozen=True)
+    class Args:
+        key_gate: StringGateProtocol | None = None
 
-    def __call__(self):
-        return ScaffoldDictFetcher(
-            dict_fetcher=RawShellDictFetcher(),
-            key_gate=NoCasePrefixGate(prefix=self.prefix),
-        )()
+        def build(self) -> StandardShellDictFetcher:
+            return StandardShellDictFetcher(self)
+
+    def __init__(self, args: Args | None = None) -> None:
+        active_args = args or StandardShellDictFetcher.Args()
+        fetcher: DictFetcherProtocol = RawShellDictFetcher()
+        if active_args.key_gate is not None:
+            fetcher = DecoratedDictFetcher(
+                dict_fetcher=fetcher,
+                dict_transform=KeyGateDictTransform(key_gate=active_args.key_gate),
+            )
+        self.parent = fetcher
+
+    def __call__(self) -> dict[str, Any]:
+        return dict(self.parent())
 
 
-@dataclass(kw_only=True, frozen=True)
-class StandardJsonDictFetcher(DictFetcherProtocol):
-    prefix: str = ""
-    file: Path
+class StandardFileDictFetcher(DictFetcherProtocol):
+    @dataclass(kw_only=True, frozen=True)
+    class Args:
+        file: Path
+        key_path: Sequence[str] = ()
+        key_gate: StringGateProtocol | None = None
 
-    def __call__(self):
-        return ScaffoldDictFetcher(
-            dict_fetcher=RawJsonDictFetcher(file=self.file),
-            key_gate=NoCasePrefixGate(prefix=self.prefix),
-        )()
+        def build(self) -> StandardFileDictFetcher:
+            return StandardFileDictFetcher(self)
+
+    def __init__(self, args: Args) -> None:
+        fetcher: DictFetcherProtocol = RawFileDictFetcher(
+            file=args.file,
+            loader=StandardFileDictLoader.Args().build(),
+        )
+        if args.key_path:
+            fetcher = DecoratedDictFetcher(
+                dict_fetcher=fetcher,
+                dict_transform=KeyPathDictTransform(key_path=args.key_path),
+            )
+        if args.key_gate is not None:
+            fetcher = DecoratedDictFetcher(
+                dict_fetcher=fetcher,
+                dict_transform=KeyGateDictTransform(key_gate=args.key_gate),
+            )
+        self.parent = fetcher
+
+    def __call__(self) -> dict[str, Any]:
+        return dict(self.parent())
 
 
 __all__ = [
-    "RawJsonDictFetcher",
-    "RawShellDictFetcher",
-    "StandardJsonDictFetcher",
+    "StandardFileDictFetcher",
     "StandardShellDictFetcher",
 ]

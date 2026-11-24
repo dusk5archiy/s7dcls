@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from .mechanism import (
     AnnotatedValidator,
@@ -14,35 +16,42 @@ from .mechanism import (
     TypeInstanceValidator,
     UnionValidator,
 )
-from .protocol import StrictValidatorProtocol, ValidatorProtocol
+from .ops import FirstMatchValidator
+from .protocol import StrictValidatorProtocol
+from .scaffold import RecursiveValidator
 
 
 class StandardValidator(StrictValidatorProtocol):
-    def __init__(self) -> None:
-        self.validators: tuple[ValidatorProtocol, ...] = (
-            AnyValidator(),
-            AnnotatedValidator(inner_validator=self),
-            UnionValidator(inner_validator=self),
-            LiteralValidator(),
-            NoneValidator(),
-            TypeInstanceValidator(datatype=bool),
-            TypeInstanceValidator(datatype=int),
-            TypeInstanceValidator(datatype=float),
-            TypeInstanceValidator(datatype=str),
-            TypeInstanceValidator(datatype=Path),
-            ListValidator(inner_validator=self),
-            DictValidator(inner_validator=self),
-            TupleValidator(inner_validator=self),
-            DataclassValidator(inner_validator=self),
+    @dataclass(kw_only=True, frozen=True)
+    class Args:
+        def build(self) -> StandardValidator:
+            return StandardValidator(self)
+
+    def __init__(self, args: Args | None = None) -> None:
+        self.args = args or StandardValidator.Args()
+        self.parent = RecursiveValidator(
+            validator_recursion=lambda inner: FirstMatchValidator(
+                validators=(
+                    AnyValidator(),
+                    AnnotatedValidator(inner_validator=inner),
+                    UnionValidator(inner_validator=inner),
+                    LiteralValidator(),
+                    NoneValidator(),
+                    TypeInstanceValidator(datatype=bool),
+                    TypeInstanceValidator(datatype=int),
+                    TypeInstanceValidator(datatype=float),
+                    TypeInstanceValidator(datatype=str),
+                    TypeInstanceValidator(datatype=Path),
+                    ListValidator(inner_validator=inner),
+                    DictValidator(inner_validator=inner),
+                    TupleValidator(inner_validator=inner),
+                    DataclassValidator(inner_validator=inner),
+                )
+            )
         )
 
-    def __call__(self, *, value, dtype) -> None:
-        for validator in self.validators:
-            result = validator(value=value, dtype=dtype)
-            if result is not None:
-                return None
-
-        raise TypeError({"value": value, "expected_type": str(dtype)})
+    def __call__(self, *, value: Any, dtype: Any) -> None:
+        self.parent(value=value, dtype=dtype)
 
 
 __all__ = ["StandardValidator"]

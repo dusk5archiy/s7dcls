@@ -16,11 +16,7 @@ class ListTypeDescriber(TypeDescriberProtocol):
             return None
 
         args = get_args(dtype)
-        items = (
-            self.inner_type_describer(dtype=args[0])
-            if args
-            else {"type": "any"}
-        )
+        items = self.inner_type_describer(dtype=args[0]) if args else {"type": "any"}
         return DescribeTypeResult(schema={"type": "array", "items": items})
 
 

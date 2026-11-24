@@ -13,4 +13,14 @@ class StrictTypeDescriberProtocol(Protocol):
     def __call__(self, *, dtype: Any) -> dict[str, Any]: ...
 
 
-__all__ = ["StrictTypeDescriberProtocol", "TypeDescriberProtocol"]
+class TypeDescriberRecursionProtocol(Protocol):
+    def __call__(
+        self, inner_type_describer: StrictTypeDescriberProtocol, /
+    ) -> TypeDescriberProtocol: ...
+
+
+__all__ = [
+    "StrictTypeDescriberProtocol",
+    "TypeDescriberProtocol",
+    "TypeDescriberRecursionProtocol",
+]

@@ -13,4 +13,14 @@ class StrictUncoercerProtocol(Protocol):
     def __call__(self, *, value: Any) -> Any: ...
 
 
-__all__ = ["StrictUncoercerProtocol", "UncoercerProtocol"]
+class UncoercerRecursionProtocol(Protocol):
+    def __call__(
+        self, inner_uncoercer: StrictUncoercerProtocol, /
+    ) -> UncoercerProtocol: ...
+
+
+__all__ = [
+    "StrictUncoercerProtocol",
+    "UncoercerProtocol",
+    "UncoercerRecursionProtocol",
+]

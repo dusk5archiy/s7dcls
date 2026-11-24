@@ -1,22 +1,27 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Protocol
-
-from s7dcls.coercers.protocol import StrictCoercerProtocol
 
 if TYPE_CHECKING:
     from _typeshed import DataclassInstance
+
+    from s7dcls.coercers.protocol import StrictCoercerProtocol
 
 
 class DataclassHydratorProtocol(Protocol):
     def __call__[T: DataclassInstance](
         self,
         *,
+        data: Mapping[str, Any],
         datacls: type[T],
-        data: dict[str, Any],
-        coercer: StrictCoercerProtocol,
-        extra_keys_allowed: bool,
     ) -> T: ...
 
 
-__all__ = ["DataclassHydratorProtocol"]
+class DataclassHydratorFactoryProtocol(Protocol):
+    def __call__(
+        self, coercer: StrictCoercerProtocol, /
+    ) -> DataclassHydratorProtocol: ...
+
+
+__all__ = ["DataclassHydratorFactoryProtocol", "DataclassHydratorProtocol"]

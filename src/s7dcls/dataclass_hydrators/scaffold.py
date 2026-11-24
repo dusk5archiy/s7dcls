@@ -1,70 +1,49 @@
 from __future__ import annotations
 
-from dataclasses import Field, dataclass, fields
+from collections.abc import Mapping
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from s7dcls.dataclass_kwargs_resolvers.protocol import DataclassKwargsResolverProtocol
+from s7dcls.dataclass_kwargs_resolvers.scaffold import ScaffoldDataclassKwargsResolver
 from s7dcls.type_emitters.protocol import TransformProtocol
-from s7dcls.type_hints import get_cached_type_hints
 
-from .protocol import DataclassHydratorProtocol
+from .protocol import DataclassHydratorFactoryProtocol, DataclassHydratorProtocol
 
 if TYPE_CHECKING:
     from _typeshed import DataclassInstance
 
+    from s7dcls.coercers.protocol import StrictCoercerProtocol
+
 
 @dataclass(kw_only=True, frozen=True)
-class ScaffoldDataclassHydrator(DataclassHydratorProtocol):
-    class_key_projection: TransformProtocol[str] | None = None
-    data_key_projection: TransformProtocol[str] | None = None
+class ChainDataclassHydrator(DataclassHydratorProtocol):
+    kwargs_resolver: DataclassKwargsResolverProtocol
 
     def __call__[T: DataclassInstance](
-        self, *, datacls, data, coercer, extra_keys_allowed
-    ):
-        projected_key_to_definition: dict[str, Field[Any]] = {}
+        self,
+        *,
+        data: Mapping[str, Any],
+        datacls: type[T],
+    ) -> T:
+        return datacls(**self.kwargs_resolver(data=data, datacls=datacls))
 
-        for definition in fields(datacls):
-            if not definition.init:
-                continue
 
-            _class_key = definition.name
-            _projected_key = _class_key
+@dataclass(kw_only=True, frozen=True)
+class ScaffoldDataclassHydratorFactory(DataclassHydratorFactoryProtocol):
+    class_key_projection: TransformProtocol[str] | None = None
+    data_key_projection: TransformProtocol[str] | None = None
+    extra_keys_allowed: bool = False
 
-            if self.class_key_projection is not None:
-                _projected_key = self.class_key_projection(_class_key)
-
-            projected_key_to_definition[_projected_key] = definition
-
-        type_hints = get_cached_type_hints(datacls)
-
-        # ----------------------------------------------------------------------
-        _projected_key_to_data_value: dict[str, Any] = {}
-
-        for data_key, data_value in data.items():
-            _projected_key = data_key
-            if self.data_key_projection is not None:
-                _projected_key = self.data_key_projection(data_key)
-
-            _projected_key_to_data_value[_projected_key] = data_value
-
-        if not extra_keys_allowed:
-            unknown = sorted(
-                set(_projected_key_to_data_value) - set(projected_key_to_definition)
+    def __call__(self, coercer: StrictCoercerProtocol) -> DataclassHydratorProtocol:
+        return ChainDataclassHydrator(
+            kwargs_resolver=ScaffoldDataclassKwargsResolver(
+                coercer=coercer,
+                class_key_projection=self.class_key_projection,
+                data_key_projection=self.data_key_projection,
+                extra_keys_allowed=self.extra_keys_allowed,
             )
-
-            if unknown:
-                raise ValueError({"expected_type": str(datacls), "unknown": unknown})
-
-        kwargs: dict[str, Any] = {}
-
-        for projected_key, data_value in _projected_key_to_data_value.items():
-            _definition = projected_key_to_definition.get(projected_key)
-            if _definition is None:
-                continue
-
-            _dtype = type_hints.get(_definition.name, _definition.type)
-            kwargs[_definition.name] = coercer(value=data_value, dtype=_dtype)
-
-        return datacls(**kwargs)
+        )
 
 
-__all__ = ["ScaffoldDataclassHydrator"]
+__all__ = ["ChainDataclassHydrator", "ScaffoldDataclassHydratorFactory"]

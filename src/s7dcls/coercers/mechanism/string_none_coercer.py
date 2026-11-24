@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import Any
 
 from s7dcls.coercers.models import CoerceResult
 from s7dcls.coercers.protocol import CoercerProtocol
@@ -11,7 +12,7 @@ from s7dcls.coercers.protocol import CoercerProtocol
 class StringNoneCoercer(CoercerProtocol):
     values: Sequence[str] = ("", "none", "null")
 
-    def __call__(self, *, value, dtype):
+    def __call__(self, *, value: Any, dtype: Any) -> CoerceResult[None] | None:
         if dtype is not type(None) and dtype is not None:
             return None
 

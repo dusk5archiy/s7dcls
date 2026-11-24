@@ -12,7 +12,13 @@ class RegexMatch(ValueCheckerProtocol):
 
     def __call__(self, value) -> None:
         if not isinstance(value, str):
-            raise TypeError({"value": value, "expected_type": str(str)})
+            raise TypeError(
+                {
+                    "value": value,
+                    "expected_type": str(str),
+                    "got_type": str(type(value)),
+                }
+            )
         if re.fullmatch(self.pattern, value) is None:
             raise ValueError({"value": value, "pattern": self.pattern})
 

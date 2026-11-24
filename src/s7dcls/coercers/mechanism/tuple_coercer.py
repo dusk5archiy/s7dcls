@@ -14,7 +14,9 @@ class TupleCoercer(JsonCoercerProtocol):
     def can_handle(self, *, dtype: Any) -> bool:
         return dtype is tuple or get_origin(dtype) is tuple
 
-    def __call__(self, *, value, dtype):
+    def __call__(
+        self, *, value: Any, dtype: Any
+    ) -> CoerceResult[tuple[Any, ...]] | None:
         if dtype is not tuple and get_origin(dtype) is not tuple:
             return None
 
@@ -33,9 +35,7 @@ class TupleCoercer(JsonCoercerProtocol):
         args = get_args(dtype)
         if len(args) == 2 and args[1] is Ellipsis:
             _dtype = args[0]
-            _results = [
-                self.inner_coercer(value=item, dtype=_dtype) for item in value
-            ]
+            _results = [self.inner_coercer(value=item, dtype=_dtype) for item in value]
             return CoerceResult(value=tuple(_results))
 
         if len(args) == 1 and args[0] == ():

@@ -61,7 +61,7 @@ def _extract_from_ast(datacls: type[Any]) -> tuple[str | None, dict[str, str]] |
 @lru_cache(maxsize=256)
 def get_cached_dataclass_docstrings(datacls: type[Any]) -> DataclassDocstrings:
     if not isinstance(datacls, type) or not is_dataclass(datacls):
-        raise TypeError({"datacls": str(datacls), "reason": "must be a dataclass"})
+        raise TypeError({"dtype": str(datacls), "expected_type": "dataclass"})
 
     ast_result = _extract_from_ast(datacls)
     if ast_result is not None:

@@ -3,24 +3,20 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from s7dcls.string_dict_dataclass_hydrators.protocol import (
-    StringDictDataclassHydratorProtocol,
-)
-from s7dcls.type_emitters.protocol import DataclassEmitterProtocol, EmitterProtocol
+from s7dcls.dataclass_sources.protocol import DataclassSourceProtocol
+from s7dcls.type_emitters.protocol import DataclassEmitterProtocol
 
 if TYPE_CHECKING:
     from _typeshed import DataclassInstance
 
 
 @dataclass(kw_only=True, frozen=True)
-class ScaffoldSourceDataclassFetcher[T: DataclassInstance](DataclassEmitterProtocol[T]):
+class ChainDataclassFetcher[T: DataclassInstance](DataclassEmitterProtocol[T]):
+    source: DataclassSourceProtocol
     datacls: type[T]
-    dict_emitter: EmitterProtocol[dict[str, str]]
-    string_dict_dataclass_hydrator: StringDictDataclassHydratorProtocol
 
-    def __call__(self):
-        data = self.dict_emitter()
-        return self.string_dict_dataclass_hydrator(datacls=self.datacls, data=data)
+    def __call__(self) -> T:
+        return self.datacls(**self.source(datacls=self.datacls))
 
 
-__all__ = ["ScaffoldSourceDataclassFetcher"]
+__all__ = ["ChainDataclassFetcher"]

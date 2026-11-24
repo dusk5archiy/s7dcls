@@ -12,12 +12,16 @@ class IntervalRangeValueChecker(ValueCheckerProtocol):
 
     def __call__(self, value):
         if not isinstance(value, (int, float)) or isinstance(value, bool):
-            raise TypeError({"value": value, "expected_type": "int | float"})
+            raise TypeError(
+                {
+                    "value": value,
+                    "expected_type": str(int | float),
+                    "got_type": str(type(value)),
+                }
+            )
 
         if not self.min <= value <= self.max:
-            raise ValueError(
-                {"expected_min": self.min, "expected_max": self.max, "value": value}
-            )
+            raise ValueError({"value": value, "min": self.min, "max": self.max})
 
     @classmethod
     def sigmoid(cls):

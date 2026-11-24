@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from s7dcls.coercers.models import CoerceResult
 from s7dcls.coercers.protocol import CoercerProtocol
@@ -9,7 +10,7 @@ from s7dcls.coercers.protocol import CoercerProtocol
 
 @dataclass(kw_only=True, frozen=True)
 class PathCoercer(CoercerProtocol):
-    def __call__(self, *, value, dtype):
+    def __call__(self, *, value: Any, dtype: Any) -> CoerceResult[Path] | None:
         if dtype is not Path:
             return None
 

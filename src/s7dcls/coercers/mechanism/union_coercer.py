@@ -22,9 +22,7 @@ class UnionCoercer(CoercerProtocol):
 
         for arg in args:
             try:
-                return CoerceResult(
-                    value=self.inner_coercer(value=value, dtype=arg)
-                )
+                return CoerceResult(value=self.inner_coercer(value=value, dtype=arg))
             except (ValueError, TypeError) as e:
                 errors.append(e)
                 continue

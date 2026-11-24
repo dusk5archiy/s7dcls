@@ -1,16 +1,18 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any, cast
 
 from s7dcls.coercers.models import CoerceResult
 from s7dcls.coercers.protocol import CoercerProtocol
 
 
 @dataclass(kw_only=True, frozen=True)
-class StringTypeCallCoercer(CoercerProtocol):
-    datatype: type
+class StringTypeCallCoercer[T](CoercerProtocol):
+    datatype: type[T]
 
-    def __call__(self, *, value, dtype):
+    def __call__(self, *, value: Any, dtype: Any) -> CoerceResult[T] | None:
         if dtype is not self.datatype:
             return None
 
@@ -24,9 +26,12 @@ class StringTypeCallCoercer(CoercerProtocol):
             )
 
         try:
-            return CoerceResult(value=self.datatype(value))
+            ctor = cast(Callable[[str], T], self.datatype)
+            return CoerceResult(value=ctor(value))
         except (ValueError, TypeError) as e:
-            raise type(e)({"value": value, "expected_type": str(dtype), "e": e}) from e
+            raise type(e)(
+                {"value": value, "expected_type": str(dtype), "error": e}
+            ) from e
 
 
 __all__ = ["StringTypeCallCoercer"]

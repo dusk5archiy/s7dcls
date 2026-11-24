@@ -8,7 +8,13 @@ from ..protocol import ValueCheckerProtocol
 
 def _require_number(value: Any) -> int | float:
     if not isinstance(value, (int, float)) or isinstance(value, bool):
-        raise TypeError({"value": value, "expected_type": str(int | float)})
+        raise TypeError(
+            {
+                "value": value,
+                "expected_type": str(int | float),
+                "got_type": str(type(value)),
+            }
+        )
     return value
 
 

@@ -14,7 +14,9 @@ class DictCoercer(JsonCoercerProtocol):
     def can_handle(self, *, dtype: Any) -> bool:
         return dtype is dict or get_origin(dtype) is dict
 
-    def __call__(self, *, value, dtype):
+    def __call__(
+        self, *, value: Any, dtype: Any
+    ) -> CoerceResult[dict[Any, Any]] | None:
         if dtype is not dict and get_origin(dtype) is not dict:
             return None
 
@@ -23,7 +25,7 @@ class DictCoercer(JsonCoercerProtocol):
                 {
                     "value": value,
                     "expected_type": str(dict),
-                    "got_dtype": str(type(value)),
+                    "got_type": str(type(value)),
                 }
             )
 

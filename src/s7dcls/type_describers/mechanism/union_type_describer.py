@@ -20,14 +20,13 @@ class UnionTypeDescriber(TypeDescriberProtocol):
         non_none = [arg for arg in raw_args if arg is not type(None)]
         nullable = len(non_none) < len(raw_args)
 
+        schema: dict[str, Any]
         if len(non_none) == 1:
             schema = dict(self.inner_type_describer(dtype=non_none[0]))
         else:
             schema = {
                 "type": "union",
-                "variants": [
-                    self.inner_type_describer(dtype=arg) for arg in non_none
-                ],
+                "variants": [self.inner_type_describer(dtype=arg) for arg in non_none],
             }
 
         schema["nullable"] = nullable

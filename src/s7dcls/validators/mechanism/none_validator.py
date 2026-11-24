@@ -16,7 +16,11 @@ class NoneValidator(ValidatorProtocol):
             return ValidateResult()
 
         raise TypeError(
-            {"value": value, "expected_type": str(type(None)), "got_type": str(type(value))}
+            {
+                "value": value,
+                "expected_type": str(type(None)),
+                "got_type": str(type(value)),
+            }
         )
 
 

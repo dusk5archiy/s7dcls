@@ -16,7 +16,13 @@ class DictUncoercer(UncoercerProtocol):
         result = {}
         for k, v in value.items():
             if not isinstance(k, str):
-                raise TypeError({"key": k, "expected_type": str(str)})
+                raise TypeError(
+                    {
+                        "key": k,
+                        "expected_type": str(str),
+                        "got_type": str(type(k)),
+                    }
+                )
             result[k] = self.inner_uncoercer(value=v)
         return UncoerceResult(value=result)
 

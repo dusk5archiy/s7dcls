@@ -13,4 +13,14 @@ class StrictValidatorProtocol(Protocol):
     def __call__(self, *, value: Any, dtype: Any) -> None: ...
 
 
-__all__ = ["StrictValidatorProtocol", "ValidatorProtocol"]
+class ValidatorRecursionProtocol(Protocol):
+    def __call__(
+        self, inner_validator: StrictValidatorProtocol, /
+    ) -> ValidatorProtocol: ...
+
+
+__all__ = [
+    "StrictValidatorProtocol",
+    "ValidatorProtocol",
+    "ValidatorRecursionProtocol",
+]
