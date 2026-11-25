@@ -9,13 +9,13 @@ from .scaffold import ScaffoldDataclassDehydrator
 if TYPE_CHECKING:
     from _typeshed import DataclassInstance
 
-    from s7dcls.uncoercers.protocol import StrictUncoercerProtocol
+    from s7dcls.uncoercers.protocol import UncoercerProtocol
 
 
 class StandardDataclassDehydrator(DataclassDehydratorProtocol):
     @dataclass(kw_only=True, frozen=True)
     class Args:
-        uncoercer: StrictUncoercerProtocol | None = None
+        uncoercer: UncoercerProtocol | None = None
 
         def build(self) -> StandardDataclassDehydrator:
             return StandardDataclassDehydrator(self)

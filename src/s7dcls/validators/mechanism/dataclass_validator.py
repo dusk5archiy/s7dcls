@@ -5,12 +5,12 @@ from dataclasses import dataclass, fields, is_dataclass
 from s7dcls.type_hints import get_cached_type_hints
 
 from ..models import ValidateResult
-from ..protocol import StrictValidatorProtocol, ValidatorProtocol
+from ..protocol import ValidatorProtocol, ValidatorWorkerProtocol
 
 
 @dataclass(kw_only=True, frozen=True)
-class DataclassValidator(ValidatorProtocol):
-    inner_validator: StrictValidatorProtocol
+class DataclassValidatorWorker(ValidatorWorkerProtocol):
+    hub: ValidatorProtocol
 
     def __call__(self, *, value, dtype):
         if not isinstance(dtype, type) or not is_dataclass(dtype):
@@ -31,9 +31,9 @@ class DataclassValidator(ValidatorProtocol):
                 continue
             field_dtype = type_hints.get(definition.name, definition.type)
             field_value = getattr(value, definition.name)
-            self.inner_validator(value=field_value, dtype=field_dtype)
+            self.hub(value=field_value, dtype=field_dtype)
 
         return ValidateResult()
 
 
-__all__ = ["DataclassValidator"]
+__all__ = ["DataclassValidatorWorker"]

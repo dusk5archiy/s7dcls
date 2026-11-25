@@ -4,12 +4,12 @@ from pathlib import Path
 from typing import Any, Protocol
 
 
-class FileDictLoaderProtocol(Protocol):
+class FileDictLoaderWorkerProtocol(Protocol):
     def __call__(self, file: Path, /) -> dict[str, Any] | None: ...
 
 
-class StrictFileDictLoaderProtocol(Protocol):
+class FileDictLoaderProtocol(Protocol):
     def __call__(self, file: Path, /) -> dict[str, Any]: ...
 
 
-__all__ = ["FileDictLoaderProtocol", "StrictFileDictLoaderProtocol"]
+__all__ = ["FileDictLoaderProtocol", "FileDictLoaderWorkerProtocol"]

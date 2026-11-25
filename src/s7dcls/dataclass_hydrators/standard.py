@@ -12,13 +12,13 @@ from .scaffold import ChainDataclassHydrator
 if TYPE_CHECKING:
     from _typeshed import DataclassInstance
 
-    from s7dcls.coercers.protocol import StrictCoercerProtocol
+    from s7dcls.coercers.protocol import CoercerProtocol
 
 
 class StandardDataclassHydrator(DataclassHydratorProtocol):
     @dataclass(kw_only=True, frozen=True)
     class Args:
-        coercer: StrictCoercerProtocol | None = None
+        coercer: CoercerProtocol | None = None
 
         def build(self) -> StandardDataclassHydrator:
             return StandardDataclassHydrator(self)

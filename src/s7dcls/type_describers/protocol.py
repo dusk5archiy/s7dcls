@@ -5,22 +5,22 @@ from typing import Any, Protocol
 from .models import DescribeTypeResult
 
 
-class TypeDescriberProtocol(Protocol):
+class TypeDescriberWorkerProtocol(Protocol):
     def __call__(self, *, dtype: Any) -> DescribeTypeResult | None: ...
 
 
-class StrictTypeDescriberProtocol(Protocol):
+class TypeDescriberProtocol(Protocol):
     def __call__(self, *, dtype: Any) -> dict[str, Any]: ...
 
 
-class TypeDescriberRecursionProtocol(Protocol):
+class TypeDescriberSpawnerProtocol(Protocol):
     def __call__(
-        self, inner_type_describer: StrictTypeDescriberProtocol, /
-    ) -> TypeDescriberProtocol: ...
+        self, hub: TypeDescriberProtocol, /
+    ) -> TypeDescriberWorkerProtocol: ...
 
 
 __all__ = [
-    "StrictTypeDescriberProtocol",
     "TypeDescriberProtocol",
-    "TypeDescriberRecursionProtocol",
+    "TypeDescriberSpawnerProtocol",
+    "TypeDescriberWorkerProtocol",
 ]

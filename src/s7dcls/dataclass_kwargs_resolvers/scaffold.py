@@ -4,7 +4,7 @@ from collections.abc import Mapping
 from dataclasses import Field, dataclass, fields
 from typing import TYPE_CHECKING, Any
 
-from s7dcls.coercers.protocol import StrictCoercerProtocol
+from s7dcls.coercers.protocol import CoercerProtocol
 from s7dcls.type_emitters.protocol import TransformProtocol
 from s7dcls.type_hints import get_cached_type_hints
 
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 @dataclass(kw_only=True, frozen=True)
 class ScaffoldDataclassKwargsResolver(DataclassKwargsResolverProtocol):
-    coercer: StrictCoercerProtocol
+    coercer: CoercerProtocol
     class_key_projection: TransformProtocol[str] | None = None
     data_key_projection: TransformProtocol[str] | None = None
     extra_keys_allowed: bool = False

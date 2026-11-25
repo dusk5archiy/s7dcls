@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Protocol
 if TYPE_CHECKING:
     from _typeshed import DataclassInstance
 
-    from s7dcls.coercers.protocol import StrictCoercerProtocol
+    from s7dcls.coercers.protocol import CoercerProtocol
 
 
 class DataclassHydratorProtocol(Protocol):
@@ -19,9 +19,7 @@ class DataclassHydratorProtocol(Protocol):
 
 
 class DataclassHydratorFactoryProtocol(Protocol):
-    def __call__(
-        self, coercer: StrictCoercerProtocol, /
-    ) -> DataclassHydratorProtocol: ...
+    def __call__(self, coercer: CoercerProtocol, /) -> DataclassHydratorProtocol: ...
 
 
 __all__ = ["DataclassHydratorFactoryProtocol", "DataclassHydratorProtocol"]

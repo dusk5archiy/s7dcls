@@ -13,14 +13,14 @@ from .scaffold import ChainDataclassSource
 if TYPE_CHECKING:
     from _typeshed import DataclassInstance
 
-    from s7dcls.coercers.protocol import StrictCoercerProtocol
+    from s7dcls.coercers.protocol import CoercerProtocol
 
 
 class StandardDataclassSource(DataclassSourceProtocol):
     @dataclass(kw_only=True, frozen=True)
     class Args:
         dict_fetcher: DictFetcherProtocol
-        coercer: StrictCoercerProtocol | None = None
+        coercer: CoercerProtocol | None = None
 
         def build(self) -> StandardDataclassSource:
             return StandardDataclassSource(self)

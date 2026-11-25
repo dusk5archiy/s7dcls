@@ -29,35 +29,101 @@ flowchart LR
 | `protocol.py` | Interface (`*Protocol`) |
 | `mechanism.py` / `mechanism/` | Atomic implementations |
 | `ops.py` | Closed combinators on same protocol |
-| `scaffold.py` | Core algorithms, `Chain*`, `Recursive*` |
+| `scaffold.py` | Core algorithms, `Chain*`, `Hub*` |
 | `standard.py` | Default presets (`.Args(...).build()`) |
 
-## Naming Algebra
+## Patterns
 
-### Prefixes
+### Prefixes (`ops.py`)
 
-| Prefix | Type Shape | File |
-| :--- | :--- | :--- |
-| `Sequence*` | `(A -> A)^n -> (A -> A)` | `ops.py` |
-| `Aggregate*` | `(1 -> M)^n -> (1 -> M)` (merge) | `ops.py` |
-| `Decorated*` | `(A -> B) + (B -> B) -> (A -> B)` | `ops.py` |
-| `FirstMatch*` | `(X -> Y \| None)^n -> (X -> Y \| None)` | `ops.py` |
-| `Fallback*` | `(X -> Y \| err)^n -> (X -> Y \| err)` | `ops.py` |
-| `All*` / `Any*` | `(X -> None \| err)^n -> (X -> None \| err)` | `ops.py` |
-| `Chain*` | `(A -> B) + (B -> C) -> (A -> C)` | `scaffold.py` |
-| `Recursive*` | `((X -> Y) -> (X -> Y \| None)) -> (X -> Y)` | `scaffold.py` |
-| `Scaffold*` | Algorithm template / strictify | `scaffold.py` |
-| `Standard*` | `.Args(...).build()` preset | `standard.py` |
+```text
+class Sequence(T -> T):
+    fn init(fs: [T -> T])
+    fn call(x: T) -> T:
+        for f in fs:
+            x = f(x)
+        return x
+
+class Aggregate(A -> M):
+    fn init(fs: [A -> M])
+    fn call(x: A) -> M:
+        return merge(f(x) for f in fs)
+
+class Decorated(A -> B):
+    fn init(f: A -> B, t: B -> B)
+    fn call(x: A) -> B:
+        return t(f(x))
+
+class FirstMatch(X -> Y | None):
+    fn init(fs: [X -> Y | None])
+    fn call(x: X) -> Y | None:
+        for f in fs:
+            if (r := f(x)) is not None:
+                return r
+        return None
+
+class Fallback(X -> Y):
+    fn init(fs: [X -> Y])
+    fn call(x: X) -> Y:
+        for f in fs:
+            try:
+                return f(x)
+            except (TypeError, ValueError):
+                continue
+        raise ...
+
+class All(X -> None):
+    fn init(cs: [X -> None])
+    fn call(x: X) -> None:
+        for c in cs:
+            c(x)
+
+class Any(X -> None):
+    fn init(cs: [X -> None])
+    fn call(x: X) -> None:
+        for c in cs:
+            try:
+                c(x)
+                return
+            except (TypeError, ValueError):
+                continue
+        raise ...
+```
+
+### Prefixes (`scaffold.py` & `standard.py`)
+
+```text
+class Chain[B](A -> C):
+    fn init(f: A -> B, g: B -> C)
+    fn call(x: A) -> C:
+        return g(f(x))
+
+class Hub[B](A -> C):
+    fn init(spawner: (A -> C) -> (A -> B), map_result: B -> C):
+        worker: A -> B = spawner(self)
+    fn call(x: A) -> C:
+        return map_result(worker(x))
+
+class Scaffold(X -> Y):
+    fn init(**deps)
+    fn call(x: X) -> Y:
+        return core_algorithm(deps, x)
+
+class Standard(X -> Y):
+    fn build(args: Args) -> Standard(X -> Y)
+    fn call(x: X) -> Y
+```
 
 ### Suffixes
 
-| Suffix | Type Shape |
-| :--- | :--- |
-| `*Emitter` | `() -> T` |
-| `*Transform` | `T -> T` |
-| `*Gate` | `T -> T \| None` |
-| `*Checker` | `T -> None \| err` |
-| `*Recursion` | `(X -> Y) -> (X -> Y \| None)` |
+```text
+Emitter[T]   := () -> T
+Transform[T] := T -> T
+Gate[T]      := T -> T | None
+Checker[T]   := T -> None | err
+Worker       := X -> Result | None
+Spawner      := (A -> C) -> (A -> B)
+```
 
 ## Conventions
 
@@ -154,19 +220,19 @@ validator(
 schema = describer(dtype=Config)
 ```
 
-### Custom Recursive Coercer
+### Custom Hub Coercer
 
 ```python
 from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
 
-from s7dcls import CoerceResult, FirstMatchCoercer, RecursiveCoercer
-from s7dcls.coercers.mechanism import ListCoercer
+from s7dcls import CoerceResult, FirstMatchCoercerWorker, HubCoercer
+from s7dcls.coercers.mechanism import ListCoercerWorker
 
 
 @dataclass(kw_only=True, frozen=True)
-class UuidCoercer:
+class UuidCoercerWorker:
     def __call__(self, *, value: Any, dtype: Any) -> CoerceResult[UUID] | None:
         if dtype is not UUID:
             return None
@@ -181,9 +247,9 @@ class UuidCoercer:
         )
 
 
-coercer = RecursiveCoercer(
-    coercer_recursion=lambda inner: FirstMatchCoercer(
-        coercers=(ListCoercer(inner_coercer=inner), UuidCoercer())
+coercer = HubCoercer(
+    spawner=lambda hub: FirstMatchCoercerWorker(
+        workers=(ListCoercerWorker(hub=hub), UuidCoercerWorker())
     )
 )
 ids = coercer(value=["12345678-1234-5678-1234-567812345678"], dtype=list[UUID])

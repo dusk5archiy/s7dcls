@@ -5,24 +5,24 @@ from dataclasses import dataclass
 from typing import Any
 
 from .models import CoerceResult
-from .protocol import CoercerProtocol, StrictCoercerProtocol
+from .protocol import CoercerProtocol, CoercerWorkerProtocol
 
 
 @dataclass(kw_only=True, frozen=True)
-class FirstMatchCoercer(CoercerProtocol):
-    coercers: Sequence[CoercerProtocol]
+class FirstMatchCoercerWorker(CoercerWorkerProtocol):
+    workers: Sequence[CoercerWorkerProtocol]
 
     def __call__(self, *, value: Any, dtype: Any) -> CoerceResult[Any] | None:
-        for coercer in self.coercers:
-            result = coercer(value=value, dtype=dtype)
+        for worker in self.workers:
+            result = worker(value=value, dtype=dtype)
             if result is not None:
                 return result
         return None
 
 
 @dataclass(kw_only=True, frozen=True)
-class FallbackCoercer(StrictCoercerProtocol):
-    coercers: Sequence[StrictCoercerProtocol]
+class FallbackCoercer(CoercerProtocol):
+    coercers: Sequence[CoercerProtocol]
 
     def __call__(self, *, value: Any, dtype: Any) -> Any:
         errors: list[Exception] = []
@@ -44,4 +44,4 @@ class FallbackCoercer(StrictCoercerProtocol):
         raise TypeError({"value": value, "expected_type": str(dtype)})
 
 
-__all__ = ["FallbackCoercer", "FirstMatchCoercer"]
+__all__ = ["FallbackCoercer", "FirstMatchCoercerWorker"]

@@ -4,15 +4,15 @@ from dataclasses import dataclass
 from typing import Any
 
 from ..models import DescribeTypeResult
-from ..protocol import TypeDescriberProtocol
+from ..protocol import TypeDescriberWorkerProtocol
 
 
 @dataclass(kw_only=True, frozen=True)
-class NoneTypeDescriber(TypeDescriberProtocol):
+class NoneTypeDescriberWorker(TypeDescriberWorkerProtocol):
     def __call__(self, *, dtype: Any) -> DescribeTypeResult | None:
         if dtype is type(None):
             return DescribeTypeResult(schema={"type": "null"})
         return None
 
 
-__all__ = ["NoneTypeDescriber"]
+__all__ = ["NoneTypeDescriberWorker"]

@@ -5,18 +5,18 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from .mechanism import JsonFileDictLoader, TomlFileDictLoader
-from .ops import FirstMatchFileDictLoader
-from .protocol import FileDictLoaderProtocol, StrictFileDictLoaderProtocol
+from .mechanism import JsonFileDictLoaderWorker, TomlFileDictLoaderWorker
+from .ops import FirstMatchFileDictLoaderWorker
+from .protocol import FileDictLoaderProtocol, FileDictLoaderWorkerProtocol
 from .scaffold import ScaffoldFileDictLoader
 
 
-class StandardFileDictLoader(StrictFileDictLoaderProtocol):
+class StandardFileDictLoader(FileDictLoaderProtocol):
     @dataclass(kw_only=True, frozen=True)
     class Args:
-        loaders: Sequence[FileDictLoaderProtocol] = (
-            JsonFileDictLoader(),
-            TomlFileDictLoader(),
+        loaders: Sequence[FileDictLoaderWorkerProtocol] = (
+            JsonFileDictLoaderWorker(),
+            TomlFileDictLoaderWorker(),
         )
 
         def build(self) -> StandardFileDictLoader:
@@ -25,7 +25,7 @@ class StandardFileDictLoader(StrictFileDictLoaderProtocol):
     def __init__(self, args: Args | None = None) -> None:
         active_args = args or StandardFileDictLoader.Args()
         self.parent = ScaffoldFileDictLoader(
-            loader=FirstMatchFileDictLoader(loaders=tuple(active_args.loaders))
+            worker=FirstMatchFileDictLoaderWorker(workers=tuple(active_args.loaders))
         )
 
     def __call__(self, file: Path, /) -> dict[str, Any]:

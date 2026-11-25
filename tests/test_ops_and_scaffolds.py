@@ -13,39 +13,49 @@ from s7dcls import (
     CoerceResult,
     DescribeTypeResult,
     FallbackCoercer,
-    FirstMatchCoercer,
-    FirstMatchFileDictLoader,
-    FirstMatchTypeDescriber,
-    FirstMatchUncoercer,
-    FirstMatchValidator,
+    FirstMatchCoercerWorker,
+    FirstMatchFileDictLoaderWorker,
+    FirstMatchTypeDescriberWorker,
+    FirstMatchUncoercerWorker,
+    FirstMatchValidatorWorker,
     Ge,
     Gt,
-    JsonFileDictLoader,
+    HubCoercer,
+    HubTypeDescriber,
+    HubUncoercer,
+    HubValidator,
+    JsonFileDictLoaderWorker,
     Le,
     Lt,
-    RecursiveCoercer,
-    RecursiveTypeDescriber,
-    RecursiveUncoercer,
-    RecursiveValidator,
     ScaffoldFileDictLoader,
     StandardJsonCoercer,
     StandardStringCoercer,
     StandardTypeDescriber,
     StandardUncoercer,
     StandardValidator,
-    TomlFileDictLoader,
+    TomlFileDictLoaderWorker,
     UncoerceResult,
     ValidateResult,
 )
-from s7dcls.coercers.mechanism import AnyCoercer, ListCoercer, TypeInstanceCoercer
-from s7dcls.type_describers.mechanism import ListTypeDescriber, TypeInstanceDescriber
-from s7dcls.uncoercers.mechanism import PrimitiveUncoercer, SequenceUncoercer
-from s7dcls.validators.mechanism import ListValidator, TypeInstanceValidator
+from s7dcls.coercers.mechanism import (
+    AnyCoercerWorker,
+    ListCoercerWorker,
+    TypeInstanceCoercerWorker,
+)
+from s7dcls.type_describers.mechanism import (
+    ListTypeDescriberWorker,
+    TypeInstanceDescriberWorker,
+)
+from s7dcls.uncoercers.mechanism import (
+    PrimitiveUncoercerWorker,
+    SequenceUncoercerWorker,
+)
+from s7dcls.validators.mechanism import ListValidatorWorker, TypeInstanceValidatorWorker
 
 
 class TestOpsAndScaffolds(unittest.TestCase):
     def test_any_coercer_and_standard_json_vs_string_separation(self) -> None:
-        any_coercer = AnyCoercer()
+        any_coercer = AnyCoercerWorker()
         self.assertEqual(
             any_coercer(value={"k": 1}, dtype=Any), CoerceResult(value={"k": 1})
         )
@@ -79,7 +89,7 @@ class TestOpsAndScaffolds(unittest.TestCase):
 
     def test_scaffold_coercer_supports_custom_recursive_type(self) -> None:
         @dataclass(kw_only=True, frozen=True)
-        class UuidCoercer:
+        class UuidCoercerWorker:
             def __call__(self, *, value: Any, dtype: Any) -> CoerceResult[UUID] | None:
                 if dtype is not UUID:
                     return None
@@ -89,12 +99,12 @@ class TestOpsAndScaffolds(unittest.TestCase):
                     return CoerceResult(value=UUID(value))
                 raise TypeError({"value": value, "expected_type": str(UUID)})
 
-        coercer = RecursiveCoercer(
-            coercer_recursion=lambda inner: FirstMatchCoercer(
-                coercers=(
-                    ListCoercer(inner_coercer=inner),
-                    UuidCoercer(),
-                    TypeInstanceCoercer(datatype=int),
+        coercer = HubCoercer(
+            spawner=lambda hub: FirstMatchCoercerWorker(
+                workers=(
+                    ListCoercerWorker(hub=hub),
+                    UuidCoercerWorker(),
+                    TypeInstanceCoercerWorker(datatype=int),
                 )
             )
         )
@@ -105,10 +115,10 @@ class TestOpsAndScaffolds(unittest.TestCase):
             coercer(value="x", dtype=str)
 
     def test_first_match_coercer_stops_on_committed_error(self) -> None:
-        first_match = FirstMatchCoercer(
-            coercers=(
-                TypeInstanceCoercer(datatype=int),
-                AnyCoercer(),
+        first_match = FirstMatchCoercerWorker(
+            workers=(
+                TypeInstanceCoercerWorker(datatype=int),
+                AnyCoercerWorker(),
             )
         )
         with self.assertRaises(TypeError):
@@ -128,18 +138,18 @@ class TestOpsAndScaffolds(unittest.TestCase):
 
     def test_scaffold_and_first_match_uncoercer(self) -> None:
         @dataclass(kw_only=True, frozen=True)
-        class UuidUncoercer:
+        class UuidUncoercerWorker:
             def __call__(self, *, value: Any) -> UncoerceResult | None:
                 if isinstance(value, UUID):
                     return UncoerceResult(value=str(value))
                 return None
 
-        uncoercer = RecursiveUncoercer(
-            uncoercer_recursion=lambda inner: FirstMatchUncoercer(
-                uncoercers=(
-                    UuidUncoercer(),
-                    PrimitiveUncoercer(),
-                    SequenceUncoercer(inner_uncoercer=inner),
+        uncoercer = HubUncoercer(
+            spawner=lambda hub: FirstMatchUncoercerWorker(
+                workers=(
+                    UuidUncoercerWorker(),
+                    PrimitiveUncoercerWorker(),
+                    SequenceUncoercerWorker(hub=hub),
                 )
             )
         )
@@ -149,7 +159,7 @@ class TestOpsAndScaffolds(unittest.TestCase):
 
     def test_scaffold_and_first_match_validator(self) -> None:
         @dataclass(kw_only=True, frozen=True)
-        class UuidValidator:
+        class UuidValidatorWorker:
             def __call__(self, *, value: Any, dtype: Any) -> ValidateResult | None:
                 if dtype is not UUID:
                     return None
@@ -157,12 +167,12 @@ class TestOpsAndScaffolds(unittest.TestCase):
                     raise TypeError({"value": value, "expected_type": str(UUID)})
                 return ValidateResult()
 
-        validator = RecursiveValidator(
-            validator_recursion=lambda inner: FirstMatchValidator(
-                validators=(
-                    ListValidator(inner_validator=inner),
-                    UuidValidator(),
-                    TypeInstanceValidator(datatype=int),
+        validator = HubValidator(
+            spawner=lambda hub: FirstMatchValidatorWorker(
+                workers=(
+                    ListValidatorWorker(hub=hub),
+                    UuidValidatorWorker(),
+                    TypeInstanceValidatorWorker(datatype=int),
                 )
             )
         )
@@ -173,18 +183,18 @@ class TestOpsAndScaffolds(unittest.TestCase):
 
     def test_scaffold_and_first_match_type_describer(self) -> None:
         @dataclass(kw_only=True, frozen=True)
-        class UuidDescriber:
+        class UuidDescriberWorker:
             def __call__(self, *, dtype: Any) -> DescribeTypeResult | None:
                 if dtype is not UUID:
                     return None
                 return DescribeTypeResult(schema={"type": "uuid"})
 
-        describer = RecursiveTypeDescriber(
-            describer_recursion=lambda inner: FirstMatchTypeDescriber(
-                describers=(
-                    ListTypeDescriber(inner_type_describer=inner),
-                    UuidDescriber(),
-                    TypeInstanceDescriber(datatype=int, type_name="int"),
+        describer = HubTypeDescriber(
+            spawner=lambda hub: FirstMatchTypeDescriberWorker(
+                workers=(
+                    ListTypeDescriberWorker(hub=hub),
+                    UuidDescriberWorker(),
+                    TypeInstanceDescriberWorker(datatype=int, type_name="int"),
                 )
             )
         )
@@ -198,17 +208,17 @@ class TestOpsAndScaffolds(unittest.TestCase):
         )
 
     def test_file_dict_loader_ops_and_scaffold(self) -> None:
-        partial = FirstMatchFileDictLoader(
-            loaders=(JsonFileDictLoader(), TomlFileDictLoader())
+        worker = FirstMatchFileDictLoaderWorker(
+            workers=(JsonFileDictLoaderWorker(), TomlFileDictLoaderWorker())
         )
-        self.assertIsNone(partial(Path("/nonexistent/config.yaml")))
-        strict = ScaffoldFileDictLoader(loader=partial)
+        self.assertIsNone(worker(Path("/nonexistent/config.yaml")))
+        loader = ScaffoldFileDictLoader(worker=worker)
         with tempfile.TemporaryDirectory() as tmp:
             fp = Path(tmp) / "a.json"
             fp.write_text('{"x": 1}', encoding="utf-8")
-            self.assertEqual(strict(fp), {"x": 1})
+            self.assertEqual(loader(fp), {"x": 1})
         with self.assertRaises(ValueError):
-            strict(Path("/nonexistent/config.yaml"))
+            loader(Path("/nonexistent/config.yaml"))
 
     def test_value_checker_all_and_any_ops(self) -> None:
         in_range = AllValueChecker(checkers=(Ge(limit=1), Le(limit=10)))

@@ -10,12 +10,12 @@ from .protocol import DataclassDehydratorFactoryProtocol, DataclassDehydratorPro
 if TYPE_CHECKING:
     from _typeshed import DataclassInstance
 
-    from s7dcls.uncoercers.protocol import StrictUncoercerProtocol
+    from s7dcls.uncoercers.protocol import UncoercerProtocol
 
 
 @dataclass(kw_only=True, frozen=True)
 class ScaffoldDataclassDehydrator(DataclassDehydratorProtocol):
-    uncoercer: StrictUncoercerProtocol
+    uncoercer: UncoercerProtocol
     class_key_projection: TransformProtocol[str] | None = None
     include_non_init: bool = False
 
@@ -49,9 +49,7 @@ class ScaffoldDataclassDehydratorFactory(DataclassDehydratorFactoryProtocol):
     class_key_projection: TransformProtocol[str] | None = None
     include_non_init: bool = False
 
-    def __call__(
-        self, uncoercer: StrictUncoercerProtocol
-    ) -> DataclassDehydratorProtocol:
+    def __call__(self, uncoercer: UncoercerProtocol) -> DataclassDehydratorProtocol:
         return ScaffoldDataclassDehydrator(
             uncoercer=uncoercer,
             class_key_projection=self.class_key_projection,

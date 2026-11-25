@@ -5,12 +5,12 @@ from types import UnionType
 from typing import Union, get_args, get_origin
 
 from ..models import ValidateResult
-from ..protocol import StrictValidatorProtocol, ValidatorProtocol
+from ..protocol import ValidatorProtocol, ValidatorWorkerProtocol
 
 
 @dataclass(kw_only=True, frozen=True)
-class UnionValidator(ValidatorProtocol):
-    inner_validator: StrictValidatorProtocol
+class UnionValidatorWorker(ValidatorWorkerProtocol):
+    hub: ValidatorProtocol
 
     def __call__(self, *, value, dtype):
         origin = get_origin(dtype)
@@ -22,7 +22,7 @@ class UnionValidator(ValidatorProtocol):
 
         for arg in args:
             try:
-                self.inner_validator(value=value, dtype=arg)
+                self.hub(value=value, dtype=arg)
                 return ValidateResult()
             except (ValueError, TypeError) as e:
                 errors.append(e)
@@ -40,4 +40,4 @@ class UnionValidator(ValidatorProtocol):
         return None
 
 
-__all__ = ["UnionValidator"]
+__all__ = ["UnionValidatorWorker"]

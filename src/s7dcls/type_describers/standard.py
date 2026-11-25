@@ -5,23 +5,23 @@ from pathlib import Path
 from typing import Any
 
 from .mechanism import (
-    AnnotatedTypeDescriber,
-    AnyTypeDescriber,
-    DataclassTypeDescriber,
-    DictTypeDescriber,
-    ListTypeDescriber,
-    LiteralTypeDescriber,
-    NoneTypeDescriber,
-    TupleTypeDescriber,
-    TypeInstanceDescriber,
-    UnionTypeDescriber,
+    AnnotatedTypeDescriberWorker,
+    AnyTypeDescriberWorker,
+    DataclassTypeDescriberWorker,
+    DictTypeDescriberWorker,
+    ListTypeDescriberWorker,
+    LiteralTypeDescriberWorker,
+    NoneTypeDescriberWorker,
+    TupleTypeDescriberWorker,
+    TypeInstanceDescriberWorker,
+    UnionTypeDescriberWorker,
 )
-from .ops import FirstMatchTypeDescriber
-from .protocol import StrictTypeDescriberProtocol
-from .scaffold import RecursiveTypeDescriber
+from .ops import FirstMatchTypeDescriberWorker
+from .protocol import TypeDescriberProtocol
+from .scaffold import HubTypeDescriber
 
 
-class StandardTypeDescriber(StrictTypeDescriberProtocol):
+class StandardTypeDescriber(TypeDescriberProtocol):
     @dataclass(kw_only=True, frozen=True)
     class Args:
         include_docstrings: bool = False
@@ -31,24 +31,24 @@ class StandardTypeDescriber(StrictTypeDescriberProtocol):
 
     def __init__(self, args: Args | None = None) -> None:
         active_args = args or StandardTypeDescriber.Args()
-        self.parent = RecursiveTypeDescriber(
-            describer_recursion=lambda inner: FirstMatchTypeDescriber(
-                describers=(
-                    AnyTypeDescriber(),
-                    AnnotatedTypeDescriber(inner_type_describer=inner),
-                    UnionTypeDescriber(inner_type_describer=inner),
-                    LiteralTypeDescriber(),
-                    NoneTypeDescriber(),
-                    TypeInstanceDescriber(datatype=bool, type_name="bool"),
-                    TypeInstanceDescriber(datatype=int, type_name="int"),
-                    TypeInstanceDescriber(datatype=float, type_name="float"),
-                    TypeInstanceDescriber(datatype=str, type_name="str"),
-                    TypeInstanceDescriber(datatype=Path, type_name="path"),
-                    ListTypeDescriber(inner_type_describer=inner),
-                    TupleTypeDescriber(inner_type_describer=inner),
-                    DictTypeDescriber(inner_type_describer=inner),
-                    DataclassTypeDescriber(
-                        inner_type_describer=inner,
+        self.parent = HubTypeDescriber(
+            spawner=lambda hub: FirstMatchTypeDescriberWorker(
+                workers=(
+                    AnyTypeDescriberWorker(),
+                    AnnotatedTypeDescriberWorker(hub=hub),
+                    UnionTypeDescriberWorker(hub=hub),
+                    LiteralTypeDescriberWorker(),
+                    NoneTypeDescriberWorker(),
+                    TypeInstanceDescriberWorker(datatype=bool, type_name="bool"),
+                    TypeInstanceDescriberWorker(datatype=int, type_name="int"),
+                    TypeInstanceDescriberWorker(datatype=float, type_name="float"),
+                    TypeInstanceDescriberWorker(datatype=str, type_name="str"),
+                    TypeInstanceDescriberWorker(datatype=Path, type_name="path"),
+                    ListTypeDescriberWorker(hub=hub),
+                    TupleTypeDescriberWorker(hub=hub),
+                    DictTypeDescriberWorker(hub=hub),
+                    DataclassTypeDescriberWorker(
+                        hub=hub,
                         include_docstrings=active_args.include_docstrings,
                     ),
                 )

@@ -5,12 +5,12 @@ from types import UnionType
 from typing import Any, Union, get_args, get_origin
 
 from ..models import DescribeTypeResult
-from ..protocol import StrictTypeDescriberProtocol, TypeDescriberProtocol
+from ..protocol import TypeDescriberProtocol, TypeDescriberWorkerProtocol
 
 
 @dataclass(kw_only=True, frozen=True)
-class UnionTypeDescriber(TypeDescriberProtocol):
-    inner_type_describer: StrictTypeDescriberProtocol
+class UnionTypeDescriberWorker(TypeDescriberWorkerProtocol):
+    hub: TypeDescriberProtocol
 
     def __call__(self, *, dtype: Any) -> DescribeTypeResult | None:
         if get_origin(dtype) not in (UnionType, Union):
@@ -22,15 +22,15 @@ class UnionTypeDescriber(TypeDescriberProtocol):
 
         schema: dict[str, Any]
         if len(non_none) == 1:
-            schema = dict(self.inner_type_describer(dtype=non_none[0]))
+            schema = dict(self.hub(dtype=non_none[0]))
         else:
             schema = {
                 "type": "union",
-                "variants": [self.inner_type_describer(dtype=arg) for arg in non_none],
+                "variants": [self.hub(dtype=arg) for arg in non_none],
             }
 
         schema["nullable"] = nullable
         return DescribeTypeResult(schema=schema)
 
 
-__all__ = ["UnionTypeDescriber"]
+__all__ = ["UnionTypeDescriberWorker"]

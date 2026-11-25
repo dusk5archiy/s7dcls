@@ -4,12 +4,12 @@ from dataclasses import dataclass
 from typing import Any, get_args, get_origin
 
 from ..models import DescribeTypeResult
-from ..protocol import StrictTypeDescriberProtocol, TypeDescriberProtocol
+from ..protocol import TypeDescriberProtocol, TypeDescriberWorkerProtocol
 
 
 @dataclass(kw_only=True, frozen=True)
-class TupleTypeDescriber(TypeDescriberProtocol):
-    inner_type_describer: StrictTypeDescriberProtocol
+class TupleTypeDescriberWorker(TypeDescriberWorkerProtocol):
+    hub: TypeDescriberProtocol
 
     def __call__(self, *, dtype: Any) -> DescribeTypeResult | None:
         if get_origin(dtype) is not tuple:
@@ -20,17 +20,17 @@ class TupleTypeDescriber(TypeDescriberProtocol):
             return DescribeTypeResult(
                 schema={
                     "type": "array",
-                    "items": self.inner_type_describer(dtype=args[0]),
+                    "items": self.hub(dtype=args[0]),
                 }
             )
         if args:
             return DescribeTypeResult(
                 schema={
                     "type": "tuple",
-                    "items": [self.inner_type_describer(dtype=arg) for arg in args],
+                    "items": [self.hub(dtype=arg) for arg in args],
                 }
             )
         return DescribeTypeResult(schema={"type": "array", "items": {"type": "any"}})
 
 
-__all__ = ["TupleTypeDescriber"]
+__all__ = ["TupleTypeDescriberWorker"]

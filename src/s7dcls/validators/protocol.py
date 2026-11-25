@@ -5,22 +5,20 @@ from typing import Any, Protocol
 from .models import ValidateResult
 
 
-class ValidatorProtocol(Protocol):
+class ValidatorWorkerProtocol(Protocol):
     def __call__(self, *, value: Any, dtype: Any) -> ValidateResult | None: ...
 
 
-class StrictValidatorProtocol(Protocol):
+class ValidatorProtocol(Protocol):
     def __call__(self, *, value: Any, dtype: Any) -> None: ...
 
 
-class ValidatorRecursionProtocol(Protocol):
-    def __call__(
-        self, inner_validator: StrictValidatorProtocol, /
-    ) -> ValidatorProtocol: ...
+class ValidatorSpawnerProtocol(Protocol):
+    def __call__(self, hub: ValidatorProtocol, /) -> ValidatorWorkerProtocol: ...
 
 
 __all__ = [
-    "StrictValidatorProtocol",
     "ValidatorProtocol",
-    "ValidatorRecursionProtocol",
+    "ValidatorSpawnerProtocol",
+    "ValidatorWorkerProtocol",
 ]

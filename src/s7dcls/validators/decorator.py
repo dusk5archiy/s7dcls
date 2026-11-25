@@ -6,14 +6,14 @@ from typing import Any
 
 from s7dcls.type_hints import get_cached_type_hints
 
-from .protocol import StrictValidatorProtocol
+from .protocol import ValidatorProtocol
 from .standard import StandardValidator
 
 
 def validate[T](
     cls: type[T],
     *,
-    validator: StrictValidatorProtocol | None = None,
+    validator: ValidatorProtocol | None = None,
 ) -> type[T]:
     """Dataclass decorator that validates init fields after __init__."""
     if not is_dataclass(cls):

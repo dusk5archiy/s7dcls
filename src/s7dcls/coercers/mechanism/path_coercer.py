@@ -5,11 +5,11 @@ from pathlib import Path
 from typing import Any
 
 from s7dcls.coercers.models import CoerceResult
-from s7dcls.coercers.protocol import CoercerProtocol
+from s7dcls.coercers.protocol import CoercerWorkerProtocol
 
 
 @dataclass(kw_only=True, frozen=True)
-class PathCoercer(CoercerProtocol):
+class PathCoercerWorker(CoercerWorkerProtocol):
     def __call__(self, *, value: Any, dtype: Any) -> CoerceResult[Path] | None:
         if dtype is not Path:
             return None
@@ -26,4 +26,4 @@ class PathCoercer(CoercerProtocol):
         )
 
 
-__all__ = ["PathCoercer"]
+__all__ = ["PathCoercerWorker"]

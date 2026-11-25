@@ -2,18 +2,18 @@ from __future__ import annotations
 
 from typing import Any
 
-from .protocol import StrictValidatorProtocol, ValidatorRecursionProtocol
+from .protocol import ValidatorProtocol, ValidatorSpawnerProtocol
 
 
-class RecursiveValidator(StrictValidatorProtocol):
-    def __init__(self, *, validator_recursion: ValidatorRecursionProtocol) -> None:
-        self.validator = validator_recursion(self)
+class HubValidator(ValidatorProtocol):
+    def __init__(self, *, spawner: ValidatorSpawnerProtocol) -> None:
+        self.worker = spawner(self)
 
     def __call__(self, *, value: Any, dtype: Any) -> None:
-        result = self.validator(value=value, dtype=dtype)
+        result = self.worker(value=value, dtype=dtype)
         if result is not None:
             return
         raise TypeError({"value": value, "expected_type": str(dtype)})
 
 
-__all__ = ["RecursiveValidator"]
+__all__ = ["HubValidator"]

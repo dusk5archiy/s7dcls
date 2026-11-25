@@ -5,11 +5,11 @@ from typing import Any, Protocol, overload
 from .models import CoerceResult
 
 
-class CoercerProtocol(Protocol):
+class CoercerWorkerProtocol(Protocol):
     def __call__(self, *, value: Any, dtype: Any) -> CoerceResult[Any] | None: ...
 
 
-class StrictCoercerProtocol(Protocol):
+class CoercerProtocol(Protocol):
     @overload
     def __call__[T](self, *, value: Any, dtype: type[T]) -> T: ...
 
@@ -17,22 +17,22 @@ class StrictCoercerProtocol(Protocol):
     def __call__(self, *, value: Any, dtype: Any) -> Any: ...
 
 
-class CoercerRecursionProtocol(Protocol):
-    def __call__(self, inner_coercer: StrictCoercerProtocol, /) -> CoercerProtocol: ...
+class CoercerSpawnerProtocol(Protocol):
+    def __call__(self, hub: CoercerProtocol, /) -> CoercerWorkerProtocol: ...
+
+
+class JsonCoercerWorkerProtocol(CoercerWorkerProtocol, Protocol):
+    def can_handle(self, *, dtype: Any) -> bool: ...
 
 
 class JsonCoercerProtocol(CoercerProtocol, Protocol):
     def can_handle(self, *, dtype: Any) -> bool: ...
 
 
-class StrictJsonCoercerProtocol(StrictCoercerProtocol, Protocol):
-    def can_handle(self, *, dtype: Any) -> bool: ...
-
-
 __all__ = [
     "CoercerProtocol",
-    "CoercerRecursionProtocol",
+    "CoercerSpawnerProtocol",
+    "CoercerWorkerProtocol",
     "JsonCoercerProtocol",
-    "StrictCoercerProtocol",
-    "StrictJsonCoercerProtocol",
+    "JsonCoercerWorkerProtocol",
 ]

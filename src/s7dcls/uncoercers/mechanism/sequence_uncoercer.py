@@ -3,19 +3,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from s7dcls.uncoercers.models import UncoerceResult
-from s7dcls.uncoercers.protocol import StrictUncoercerProtocol, UncoercerProtocol
+from s7dcls.uncoercers.protocol import UncoercerProtocol, UncoercerWorkerProtocol
 
 
 @dataclass(kw_only=True, frozen=True)
-class SequenceUncoercer(UncoercerProtocol):
-    inner_uncoercer: StrictUncoercerProtocol
+class SequenceUncoercerWorker(UncoercerWorkerProtocol):
+    hub: UncoercerProtocol
 
     def __call__(self, *, value):
         if not isinstance(value, (list, tuple)):
             return None
-        return UncoerceResult(
-            value=[self.inner_uncoercer(value=item) for item in value]
-        )
+        return UncoerceResult(value=[self.hub(value=item) for item in value])
 
 
-__all__ = ["SequenceUncoercer"]
+__all__ = ["SequenceUncoercerWorker"]

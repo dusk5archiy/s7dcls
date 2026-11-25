@@ -5,12 +5,12 @@ from dataclasses import dataclass
 from typing import Any
 
 from s7dcls.coercers.models import CoerceResult
-from s7dcls.coercers.protocol import CoercerProtocol, StrictJsonCoercerProtocol
+from s7dcls.coercers.protocol import CoercerWorkerProtocol, JsonCoercerProtocol
 
 
 @dataclass(kw_only=True, frozen=True)
-class StringJsonCoercer(CoercerProtocol):
-    json_coercer: StrictJsonCoercerProtocol
+class StringJsonCoercerWorker(CoercerWorkerProtocol):
+    json_coercer: JsonCoercerProtocol
 
     def can_handle(self, *, dtype: Any) -> bool:
         return self.json_coercer.can_handle(dtype=dtype)
@@ -38,4 +38,4 @@ class StringJsonCoercer(CoercerProtocol):
         return CoerceResult(value=self.json_coercer(value=parsed, dtype=dtype))
 
 
-__all__ = ["StringJsonCoercer"]
+__all__ = ["StringJsonCoercerWorker"]

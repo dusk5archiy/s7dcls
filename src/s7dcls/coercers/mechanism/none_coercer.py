@@ -4,11 +4,11 @@ from dataclasses import dataclass
 from typing import Any
 
 from s7dcls.coercers.models import CoerceResult
-from s7dcls.coercers.protocol import CoercerProtocol
+from s7dcls.coercers.protocol import CoercerWorkerProtocol
 
 
 @dataclass(kw_only=True, frozen=True)
-class NoneCoercer(CoercerProtocol):
+class NoneCoercerWorker(CoercerWorkerProtocol):
     def __call__(self, *, value: Any, dtype: Any) -> CoerceResult[None] | None:
         if dtype is not type(None) and dtype is not None:
             return None
@@ -25,4 +25,4 @@ class NoneCoercer(CoercerProtocol):
         )
 
 
-__all__ = ["NoneCoercer"]
+__all__ = ["NoneCoercerWorker"]

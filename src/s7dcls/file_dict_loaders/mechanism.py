@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, TypeGuard
 
-from .protocol import FileDictLoaderProtocol
+from .protocol import FileDictLoaderWorkerProtocol
 
 
 def is_str_key_dict(obj: Any) -> TypeGuard[dict[str, Any]]:
@@ -44,7 +44,7 @@ def load_toml_dict(file: Path, /) -> dict[str, Any]:
 
 
 @dataclass(kw_only=True, frozen=True)
-class JsonFileDictLoader(FileDictLoaderProtocol):
+class JsonFileDictLoaderWorker(FileDictLoaderWorkerProtocol):
     suffixes: tuple[str, ...] = (".json",)
 
     def __call__(self, file: Path, /) -> dict[str, Any] | None:
@@ -54,7 +54,7 @@ class JsonFileDictLoader(FileDictLoaderProtocol):
 
 
 @dataclass(kw_only=True, frozen=True)
-class TomlFileDictLoader(FileDictLoaderProtocol):
+class TomlFileDictLoaderWorker(FileDictLoaderWorkerProtocol):
     suffixes: tuple[str, ...] = (".toml",)
 
     def __call__(self, file: Path, /) -> dict[str, Any] | None:
@@ -64,8 +64,8 @@ class TomlFileDictLoader(FileDictLoaderProtocol):
 
 
 __all__ = [
-    "JsonFileDictLoader",
-    "TomlFileDictLoader",
+    "JsonFileDictLoaderWorker",
+    "TomlFileDictLoaderWorker",
     "is_str_key_dict",
     "load_json_dict",
     "load_toml_dict",

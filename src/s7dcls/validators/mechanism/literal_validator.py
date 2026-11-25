@@ -4,11 +4,11 @@ from dataclasses import dataclass
 from typing import Literal, get_args, get_origin
 
 from ..models import ValidateResult
-from ..protocol import ValidatorProtocol
+from ..protocol import ValidatorWorkerProtocol
 
 
 @dataclass(kw_only=True, frozen=True)
-class LiteralValidator(ValidatorProtocol):
+class LiteralValidatorWorker(ValidatorWorkerProtocol):
     def __call__(self, *, value, dtype):
         if get_origin(dtype) is not Literal:
             return None
@@ -21,4 +21,4 @@ class LiteralValidator(ValidatorProtocol):
         raise ValueError({"value": value, "expected_type": str(dtype)})
 
 
-__all__ = ["LiteralValidator"]
+__all__ = ["LiteralValidatorWorker"]

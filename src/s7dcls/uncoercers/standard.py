@@ -7,19 +7,19 @@ from s7dcls.dataclass_dehydrators.protocol import DataclassDehydratorFactoryProt
 from s7dcls.dataclass_dehydrators.scaffold import ScaffoldDataclassDehydratorFactory
 
 from .mechanism import (
-    DataclassUncoercer,
-    DictUncoercer,
-    NoneUncoercer,
-    PathUncoercer,
-    PrimitiveUncoercer,
-    SequenceUncoercer,
+    DataclassUncoercerWorker,
+    DictUncoercerWorker,
+    NoneUncoercerWorker,
+    PathUncoercerWorker,
+    PrimitiveUncoercerWorker,
+    SequenceUncoercerWorker,
 )
-from .ops import FirstMatchUncoercer
-from .protocol import StrictUncoercerProtocol
-from .scaffold import RecursiveUncoercer
+from .ops import FirstMatchUncoercerWorker
+from .protocol import UncoercerProtocol
+from .scaffold import HubUncoercer
 
 
-class StandardUncoercer(StrictUncoercerProtocol):
+class StandardUncoercer(UncoercerProtocol):
     @dataclass(kw_only=True, frozen=True)
     class Args:
         dataclass_dehydrator_factory: DataclassDehydratorFactoryProtocol | None = None
@@ -33,15 +33,17 @@ class StandardUncoercer(StrictUncoercerProtocol):
             active_args.dataclass_dehydrator_factory
             or ScaffoldDataclassDehydratorFactory()
         )
-        self.parent = RecursiveUncoercer(
-            uncoercer_recursion=lambda inner: FirstMatchUncoercer(
-                uncoercers=(
-                    NoneUncoercer(),
-                    PrimitiveUncoercer(),
-                    PathUncoercer(),
-                    SequenceUncoercer(inner_uncoercer=inner),
-                    DictUncoercer(inner_uncoercer=inner),
-                    DataclassUncoercer(dataclass_dehydrator=dehydrator_factory(inner)),
+        self.parent = HubUncoercer(
+            spawner=lambda hub: FirstMatchUncoercerWorker(
+                workers=(
+                    NoneUncoercerWorker(),
+                    PrimitiveUncoercerWorker(),
+                    PathUncoercerWorker(),
+                    SequenceUncoercerWorker(hub=hub),
+                    DictUncoercerWorker(hub=hub),
+                    DataclassUncoercerWorker(
+                        dataclass_dehydrator=dehydrator_factory(hub)
+                    ),
                 )
             )
         )

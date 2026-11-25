@@ -13,7 +13,7 @@ from .protocol import DataclassHydratorFactoryProtocol, DataclassHydratorProtoco
 if TYPE_CHECKING:
     from _typeshed import DataclassInstance
 
-    from s7dcls.coercers.protocol import StrictCoercerProtocol
+    from s7dcls.coercers.protocol import CoercerProtocol
 
 
 @dataclass(kw_only=True, frozen=True)
@@ -35,7 +35,7 @@ class ScaffoldDataclassHydratorFactory(DataclassHydratorFactoryProtocol):
     data_key_projection: TransformProtocol[str] | None = None
     extra_keys_allowed: bool = False
 
-    def __call__(self, coercer: StrictCoercerProtocol) -> DataclassHydratorProtocol:
+    def __call__(self, coercer: CoercerProtocol) -> DataclassHydratorProtocol:
         return ChainDataclassHydrator(
             kwargs_resolver=ScaffoldDataclassKwargsResolver(
                 coercer=coercer,

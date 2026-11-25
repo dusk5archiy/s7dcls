@@ -3,11 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ..models import ValidateResult
-from ..protocol import ValidatorProtocol
+from ..protocol import ValidatorWorkerProtocol
 
 
 @dataclass(kw_only=True, frozen=True)
-class TypeInstanceValidator(ValidatorProtocol):
+class TypeInstanceValidatorWorker(ValidatorWorkerProtocol):
     datatype: type
 
     def __call__(self, *, value, dtype):
@@ -33,4 +33,4 @@ class TypeInstanceValidator(ValidatorProtocol):
         )
 
 
-__all__ = ["TypeInstanceValidator"]
+__all__ = ["TypeInstanceValidatorWorker"]

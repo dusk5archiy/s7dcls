@@ -5,19 +5,19 @@ from dataclasses import dataclass
 from typing import Any
 
 from .models import UncoerceResult
-from .protocol import UncoercerProtocol
+from .protocol import UncoercerWorkerProtocol
 
 
 @dataclass(kw_only=True, frozen=True)
-class FirstMatchUncoercer(UncoercerProtocol):
-    uncoercers: Sequence[UncoercerProtocol]
+class FirstMatchUncoercerWorker(UncoercerWorkerProtocol):
+    workers: Sequence[UncoercerWorkerProtocol]
 
     def __call__(self, *, value: Any) -> UncoerceResult | None:
-        for uncoercer in self.uncoercers:
-            result = uncoercer(value=value)
+        for worker in self.workers:
+            result = worker(value=value)
             if result is not None:
                 return result
         return None
 
 
-__all__ = ["FirstMatchUncoercer"]
+__all__ = ["FirstMatchUncoercerWorker"]

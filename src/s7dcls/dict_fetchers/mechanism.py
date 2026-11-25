@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from s7dcls.file_dict_loaders.mechanism import load_json_dict, load_toml_dict
-from s7dcls.file_dict_loaders.protocol import StrictFileDictLoaderProtocol
+from s7dcls.file_dict_loaders.protocol import FileDictLoaderProtocol
 
 from .protocol import DictFetcherProtocol
 
@@ -20,7 +20,7 @@ class RawShellDictFetcher(DictFetcherProtocol):
 @dataclass(kw_only=True, frozen=True)
 class RawFileDictFetcher(DictFetcherProtocol):
     file: Path
-    loader: StrictFileDictLoaderProtocol
+    loader: FileDictLoaderProtocol
 
     def __call__(self) -> dict[str, Any]:
         return self.loader(self.file)

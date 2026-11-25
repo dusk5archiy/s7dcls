@@ -14,19 +14,19 @@ from s7dcls.value_checkers.mechanism import (
 )
 
 from ..models import DescribeTypeResult
-from ..protocol import StrictTypeDescriberProtocol, TypeDescriberProtocol
+from ..protocol import TypeDescriberProtocol, TypeDescriberWorkerProtocol
 
 
 @dataclass(kw_only=True, frozen=True)
-class AnnotatedTypeDescriber(TypeDescriberProtocol):
-    inner_type_describer: StrictTypeDescriberProtocol
+class AnnotatedTypeDescriberWorker(TypeDescriberWorkerProtocol):
+    hub: TypeDescriberProtocol
 
     def __call__(self, *, dtype: Any) -> DescribeTypeResult | None:
         if get_origin(dtype) is not Annotated:
             return None
 
         base_type, *extras = get_args(dtype)
-        schema = dict(self.inner_type_describer(dtype=base_type))
+        schema = dict(self.hub(dtype=base_type))
 
         for extra in extras:
             if isinstance(extra, IntervalRangeValueChecker):
@@ -48,4 +48,4 @@ class AnnotatedTypeDescriber(TypeDescriberProtocol):
         return DescribeTypeResult(schema=schema)
 
 
-__all__ = ["AnnotatedTypeDescriber"]
+__all__ = ["AnnotatedTypeDescriberWorker"]

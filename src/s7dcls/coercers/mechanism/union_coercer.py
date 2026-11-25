@@ -5,12 +5,12 @@ from types import UnionType
 from typing import Union, get_args, get_origin
 
 from s7dcls.coercers.models import CoerceResult
-from s7dcls.coercers.protocol import CoercerProtocol, StrictCoercerProtocol
+from s7dcls.coercers.protocol import CoercerProtocol, CoercerWorkerProtocol
 
 
 @dataclass(kw_only=True, frozen=True)
-class UnionCoercer(CoercerProtocol):
-    inner_coercer: StrictCoercerProtocol
+class UnionCoercerWorker(CoercerWorkerProtocol):
+    hub: CoercerProtocol
 
     def __call__(self, *, value, dtype):
         origin = get_origin(dtype)
@@ -22,7 +22,7 @@ class UnionCoercer(CoercerProtocol):
 
         for arg in args:
             try:
-                return CoerceResult(value=self.inner_coercer(value=value, dtype=arg))
+                return CoerceResult(value=self.hub(value=value, dtype=arg))
             except (ValueError, TypeError) as e:
                 errors.append(e)
                 continue
@@ -39,4 +39,4 @@ class UnionCoercer(CoercerProtocol):
         return None
 
 
-__all__ = ["UnionCoercer"]
+__all__ = ["UnionCoercerWorker"]

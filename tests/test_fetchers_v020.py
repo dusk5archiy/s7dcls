@@ -19,7 +19,7 @@ from s7dcls import (
     DecoratedDictFetcher,
     DictFetcherProtocol,
     Gt,
-    JsonFileDictLoader,
+    JsonFileDictLoaderWorker,
     KeyGateDictTransform,
     KeyPathDictTransform,
     NoCasePrefixGate,
@@ -43,7 +43,7 @@ from s7dcls import (
     StandardStringCoercer,
     StandardUncoercer,
     StandardValidator,
-    TomlFileDictLoader,
+    TomlFileDictLoaderWorker,
     UpperTransform,
 )
 
@@ -104,8 +104,8 @@ ENV_SHELL_KR = ScaffoldDataclassKwargsResolver(
 
 class TestFileDictLoadersAndFetchersV020(unittest.TestCase):
     def test_file_dict_loader_returns_none_for_unsupported_suffix(self) -> None:
-        json_loader = JsonFileDictLoader()
-        toml_loader = TomlFileDictLoader()
+        json_loader = JsonFileDictLoaderWorker()
+        toml_loader = TomlFileDictLoaderWorker()
 
         self.assertIsNone(json_loader(Path("config.toml")))
         self.assertIsNone(toml_loader(Path("config.json")))
@@ -130,7 +130,7 @@ class TestFileDictLoadersAndFetchersV020(unittest.TestCase):
             return result
 
         custom_loader = StandardFileDictLoader.Args(
-            loaders=(JsonFileDictLoader(), TomlFileDictLoader(), kv_loader)
+            loaders=(JsonFileDictLoaderWorker(), TomlFileDictLoaderWorker(), kv_loader)
         ).build()
 
         with tempfile.TemporaryDirectory() as tmp:

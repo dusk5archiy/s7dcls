@@ -3,11 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ..models import ValidateResult
-from ..protocol import ValidatorProtocol
+from ..protocol import ValidatorWorkerProtocol
 
 
 @dataclass(kw_only=True, frozen=True)
-class NoneValidator(ValidatorProtocol):
+class NoneValidatorWorker(ValidatorWorkerProtocol):
     def __call__(self, *, value, dtype):
         if dtype is not type(None) and dtype is not None:
             return None
@@ -24,4 +24,4 @@ class NoneValidator(ValidatorProtocol):
         )
 
 
-__all__ = ["NoneValidator"]
+__all__ = ["NoneValidatorWorker"]

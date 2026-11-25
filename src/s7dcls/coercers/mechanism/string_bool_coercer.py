@@ -4,11 +4,11 @@ from dataclasses import dataclass
 from typing import Any
 
 from s7dcls.coercers.models import CoerceResult
-from s7dcls.coercers.protocol import CoercerProtocol
+from s7dcls.coercers.protocol import CoercerWorkerProtocol
 
 
 @dataclass(kw_only=True, frozen=True)
-class StringBoolCoercer(CoercerProtocol):
+class StringBoolCoercerWorker(CoercerWorkerProtocol):
     trues: tuple[str, ...] = ("1", "true", "yes", "on")
     falses: tuple[str, ...] = ("0", "false", "no", "off")
 
@@ -34,4 +34,4 @@ class StringBoolCoercer(CoercerProtocol):
         raise ValueError({"value": value, "expected_type": str(dtype)})
 
 
-__all__ = ["StringBoolCoercer"]
+__all__ = ["StringBoolCoercerWorker"]

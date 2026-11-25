@@ -7,12 +7,12 @@ from s7dcls.type_hints import get_cached_type_hints
 
 from ..docstrings import get_cached_dataclass_docstrings
 from ..models import DescribeTypeResult
-from ..protocol import StrictTypeDescriberProtocol, TypeDescriberProtocol
+from ..protocol import TypeDescriberProtocol, TypeDescriberWorkerProtocol
 
 
 @dataclass(kw_only=True, frozen=True)
-class DataclassTypeDescriber(TypeDescriberProtocol):
-    inner_type_describer: StrictTypeDescriberProtocol
+class DataclassTypeDescriberWorker(TypeDescriberWorkerProtocol):
+    hub: TypeDescriberProtocol
     include_docstrings: bool = False
 
     def __call__(self, *, dtype: Any) -> DescribeTypeResult | None:
@@ -30,7 +30,7 @@ class DataclassTypeDescriber(TypeDescriberProtocol):
                 continue
             entry: dict[str, Any] = {
                 "name": definition.name,
-                "schema": self.inner_type_describer(
+                "schema": self.hub(
                     dtype=type_hints.get(definition.name, definition.type)
                 ),
             }
@@ -51,4 +51,4 @@ class DataclassTypeDescriber(TypeDescriberProtocol):
         return DescribeTypeResult(schema=schema)
 
 
-__all__ = ["DataclassTypeDescriber"]
+__all__ = ["DataclassTypeDescriberWorker"]

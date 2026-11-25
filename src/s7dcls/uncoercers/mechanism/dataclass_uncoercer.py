@@ -5,11 +5,11 @@ from typing import Any
 
 from s7dcls.dataclass_dehydrators.protocol import DataclassDehydratorProtocol
 from s7dcls.uncoercers.models import UncoerceResult
-from s7dcls.uncoercers.protocol import UncoercerProtocol
+from s7dcls.uncoercers.protocol import UncoercerWorkerProtocol
 
 
 @dataclass(kw_only=True, frozen=True)
-class DataclassUncoercer(UncoercerProtocol):
+class DataclassUncoercerWorker(UncoercerWorkerProtocol):
     dataclass_dehydrator: DataclassDehydratorProtocol
 
     def __call__(self, *, value: Any) -> UncoerceResult | None:
@@ -18,4 +18,4 @@ class DataclassUncoercer(UncoercerProtocol):
         return UncoerceResult(value=self.dataclass_dehydrator(instance=value))
 
 
-__all__ = ["DataclassUncoercer"]
+__all__ = ["DataclassUncoercerWorker"]

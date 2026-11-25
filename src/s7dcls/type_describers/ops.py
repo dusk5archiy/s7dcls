@@ -5,19 +5,19 @@ from dataclasses import dataclass
 from typing import Any
 
 from .models import DescribeTypeResult
-from .protocol import TypeDescriberProtocol
+from .protocol import TypeDescriberWorkerProtocol
 
 
 @dataclass(kw_only=True, frozen=True)
-class FirstMatchTypeDescriber(TypeDescriberProtocol):
-    describers: Sequence[TypeDescriberProtocol]
+class FirstMatchTypeDescriberWorker(TypeDescriberWorkerProtocol):
+    workers: Sequence[TypeDescriberWorkerProtocol]
 
     def __call__(self, *, dtype: Any) -> DescribeTypeResult | None:
-        for describer in self.describers:
-            result = describer(dtype=dtype)
+        for worker in self.workers:
+            result = worker(dtype=dtype)
             if result is not None:
                 return result
         return None
 
 
-__all__ = ["FirstMatchTypeDescriber"]
+__all__ = ["FirstMatchTypeDescriberWorker"]

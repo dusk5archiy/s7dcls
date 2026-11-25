@@ -5,12 +5,12 @@ from dataclasses import dataclass, is_dataclass
 from typing import Any
 
 from s7dcls.coercers.models import CoerceResult
-from s7dcls.coercers.protocol import JsonCoercerProtocol
+from s7dcls.coercers.protocol import JsonCoercerWorkerProtocol
 from s7dcls.dataclass_hydrators.protocol import DataclassHydratorProtocol
 
 
 @dataclass(kw_only=True, frozen=True)
-class DataclassCoercer(JsonCoercerProtocol):
+class DataclassCoercerWorker(JsonCoercerWorkerProtocol):
     dataclass_hydrator: DataclassHydratorProtocol
 
     def can_handle(self, *, dtype: Any) -> bool:
@@ -37,4 +37,4 @@ class DataclassCoercer(JsonCoercerProtocol):
         )
 
 
-__all__ = ["DataclassCoercer"]
+__all__ = ["DataclassCoercerWorker"]

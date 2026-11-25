@@ -4,11 +4,11 @@ from dataclasses import dataclass
 from typing import Any, cast
 
 from s7dcls.coercers.models import CoerceResult
-from s7dcls.coercers.protocol import CoercerProtocol
+from s7dcls.coercers.protocol import CoercerWorkerProtocol
 
 
 @dataclass(kw_only=True, frozen=True)
-class TypeInstanceCoercer[T](CoercerProtocol):
+class TypeInstanceCoercerWorker[T](CoercerWorkerProtocol):
     datatype: type[T]
 
     def __call__(self, *, value: Any, dtype: Any) -> CoerceResult[T] | None:
@@ -33,4 +33,4 @@ class TypeInstanceCoercer[T](CoercerProtocol):
         )
 
 
-__all__ = ["TypeInstanceCoercer"]
+__all__ = ["TypeInstanceCoercerWorker"]

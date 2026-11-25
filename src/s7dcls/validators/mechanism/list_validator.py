@@ -4,12 +4,12 @@ from dataclasses import dataclass
 from typing import get_args, get_origin
 
 from ..models import ValidateResult
-from ..protocol import StrictValidatorProtocol, ValidatorProtocol
+from ..protocol import ValidatorProtocol, ValidatorWorkerProtocol
 
 
 @dataclass(kw_only=True, frozen=True)
-class ListValidator(ValidatorProtocol):
-    inner_validator: StrictValidatorProtocol
+class ListValidatorWorker(ValidatorWorkerProtocol):
+    hub: ValidatorProtocol
 
     def __call__(self, *, value, dtype):
         if dtype is not list and get_origin(dtype) is not list:
@@ -29,9 +29,9 @@ class ListValidator(ValidatorProtocol):
 
         elem_type = get_args(dtype)[0]
         for item in value:
-            self.inner_validator(value=item, dtype=elem_type)
+            self.hub(value=item, dtype=elem_type)
 
         return ValidateResult()
 
 
-__all__ = ["ListValidator"]
+__all__ = ["ListValidatorWorker"]

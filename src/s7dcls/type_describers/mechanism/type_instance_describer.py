@@ -4,11 +4,11 @@ from dataclasses import dataclass
 from typing import Any
 
 from ..models import DescribeTypeResult
-from ..protocol import TypeDescriberProtocol
+from ..protocol import TypeDescriberWorkerProtocol
 
 
 @dataclass(kw_only=True, frozen=True)
-class TypeInstanceDescriber(TypeDescriberProtocol):
+class TypeInstanceDescriberWorker(TypeDescriberWorkerProtocol):
     datatype: type[Any]
     type_name: str
 
@@ -18,4 +18,4 @@ class TypeInstanceDescriber(TypeDescriberProtocol):
         return None
 
 
-__all__ = ["TypeInstanceDescriber"]
+__all__ = ["TypeInstanceDescriberWorker"]
