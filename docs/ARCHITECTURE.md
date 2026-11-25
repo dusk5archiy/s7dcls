@@ -7,7 +7,8 @@
 | `protocol.py` | Interface (`*Protocol`) |
 | `mechanism.py` / `mechanism/` | Atomic implementations |
 | `ops.py` | Closed combinators on same protocol |
-| `scaffold.py` | Core algorithms, `Chain*`, `Hub*` |
+| `algorithms/` | Domain-agnostic reusable algorithms (`BfsCrawler`, `ParallelMap`, ...) |
+| `scaffold.py` | Core orchestration, `Chain*`, `Hub*` |
 | `standard.py` / `standard/` | Default presets |
 
 ## Patterns

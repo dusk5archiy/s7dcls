@@ -1,3 +1,4 @@
+from .algorithms import *
 from .coercers import *
 from .dataclass_dehydrators import *
 from .dataclass_fetchers import *
