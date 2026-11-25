@@ -39,7 +39,7 @@ class StandardValidator(ValidatorProtocol):
     def __init__(self, args: Args | None = None) -> None:
         self.args = args or StandardValidator.Args()
         collect = self.args.collect_errors
-        self.parent = HubValidator(
+        self.parent = HubValidator.Args(
             spawner=lambda hub: FirstMatchValidatorWorker(
                 workers=(
                     TypeAliasValidatorWorker(hub=hub),
@@ -65,7 +65,7 @@ class StandardValidator(ValidatorProtocol):
                     DataclassValidatorWorker(hub=hub, collect_errors=collect),
                 )
             )
-        )
+        ).build()
 
     def __call__(self, *, value: Any, dtype: Any) -> None:
         self.parent(value=value, dtype=dtype)

@@ -1,13 +1,21 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any
 
 from .protocol import UncoercerProtocol, UncoercerSpawnerProtocol
 
 
 class HubUncoercer(UncoercerProtocol):
-    def __init__(self, *, spawner: UncoercerSpawnerProtocol) -> None:
-        self.worker = spawner(self)
+    @dataclass(kw_only=True, frozen=True)
+    class Args:
+        spawner: UncoercerSpawnerProtocol
+
+        def build(self) -> HubUncoercer:
+            return HubUncoercer(self)
+
+    def __init__(self, args: Args) -> None:
+        self.worker = args.spawner(self)
 
     def __call__(self, *, value: Any) -> Any:
         result = self.worker(value=value)

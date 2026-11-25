@@ -95,7 +95,7 @@ class StandardJsonCoercer(JsonCoercerProtocol):
                 )
             )
 
-        self.parent = HubCoercer(spawner=spawn_worker)
+        self.parent = HubCoercer.Args(spawner=spawn_worker).build()
         self.container_workers = tuple(container_workers)
 
     def can_handle(self, *, dtype: Any) -> bool:
@@ -122,7 +122,7 @@ class StandardStringCoercer(CoercerProtocol):
             dataclass_hydrator_factory=active_args.dataclass_hydrator_factory,
             collect_errors=active_args.collect_errors,
         ).build()
-        self.parent = HubCoercer(
+        self.parent = HubCoercer.Args(
             spawner=lambda hub: FirstMatchCoercerWorker(
                 workers=(
                     TypeAliasCoercerWorker(hub=hub),
@@ -143,7 +143,7 @@ class StandardStringCoercer(CoercerProtocol):
                     StringNoneCoercerWorker(),
                 )
             )
-        )
+        ).build()
 
     def __call__(self, *, value: Any, dtype: Any) -> Any:
         return self.parent(value=value, dtype=dtype)

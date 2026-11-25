@@ -27,11 +27,11 @@ class Ipv4CoercerWorker:
 
 
 def main() -> None:
-    coercer = HubCoercer(
+    coercer = HubCoercer.Args(
         spawner=lambda hub: FirstMatchCoercerWorker(
             workers=(ListCoercerWorker(hub=hub), Ipv4CoercerWorker())
         )
-    )
+    ).build()
     ips = coercer(value=["127.0.0.1", "10.0.0.1"], dtype=list[IPv4Address])
     assert ips == [IPv4Address("127.0.0.1"), IPv4Address("10.0.0.1")]
     print(ips)

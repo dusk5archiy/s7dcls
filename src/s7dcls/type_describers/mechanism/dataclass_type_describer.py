@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from contextvars import ContextVar
-from dataclasses import MISSING, dataclass, fields
+from dataclasses import MISSING, dataclass, field, fields
 from typing import Any, get_args, get_origin
 
 from s7dcls.type_hints import resolve_dataclass_type
@@ -9,10 +8,6 @@ from s7dcls.type_hints import resolve_dataclass_type
 from ..docstrings import get_cached_dataclass_docstrings
 from ..models import DescribeTypeResult
 from ..protocol import TypeDescriberProtocol, TypeDescriberWorkerProtocol
-
-_ACTIVE_DATACLASSES: ContextVar[frozenset[Any]] = ContextVar(
-    "s7dcls_active_dataclasses", default=frozenset()
-)
 
 
 def _format_type_arg(arg: Any) -> str:
@@ -37,6 +32,7 @@ def _dataclass_display_name(dtype: Any, actual_cls: type[Any]) -> str:
 class DataclassTypeDescriberWorker(TypeDescriberWorkerProtocol):
     hub: TypeDescriberProtocol
     include_docstrings: bool = False
+    active: set[Any] = field(default_factory=set)
 
     def __call__(self, *, dtype: Any) -> DescribeTypeResult | None:
         resolved = resolve_dataclass_type(dtype)
@@ -45,13 +41,12 @@ class DataclassTypeDescriberWorker(TypeDescriberWorkerProtocol):
 
         actual_cls, type_hints = resolved
         display_name = _dataclass_display_name(dtype, actual_cls)
-        active = _ACTIVE_DATACLASSES.get()
-        if dtype in active:
+        if dtype in self.active:
             return DescribeTypeResult(
                 schema={"type": "dataclass_ref", "name": display_name}
             )
 
-        token = _ACTIVE_DATACLASSES.set(active | {dtype})
+        self.active.add(dtype)
         try:
             docs = (
                 get_cached_dataclass_docstrings(actual_cls)
@@ -89,7 +84,7 @@ class DataclassTypeDescriberWorker(TypeDescriberWorkerProtocol):
 
             return DescribeTypeResult(schema=schema)
         finally:
-            _ACTIVE_DATACLASSES.reset(token)
+            self.active.discard(dtype)
 
 
 __all__ = ["DataclassTypeDescriberWorker"]

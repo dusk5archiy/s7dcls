@@ -129,7 +129,7 @@ class TestOpsAndScaffolds(unittest.TestCase):
                     return CoerceResult(value=UUID(value))
                 raise TypeError({"value": value, "expected_type": str(UUID)})
 
-        coercer = HubCoercer(
+        coercer = HubCoercer.Args(
             spawner=lambda hub: FirstMatchCoercerWorker(
                 workers=(
                     ListCoercerWorker(hub=hub),
@@ -137,7 +137,7 @@ class TestOpsAndScaffolds(unittest.TestCase):
                     TypeInstanceCoercerWorker(datatype=int),
                 )
             )
-        )
+        ).build()
 
         raw = "12345678-1234-5678-1234-567812345678"
         self.assertEqual(coercer(value=[raw], dtype=list[UUID]), [UUID(raw)])
@@ -174,7 +174,7 @@ class TestOpsAndScaffolds(unittest.TestCase):
                     return UncoerceResult(value=str(value))
                 return None
 
-        uncoercer = HubUncoercer(
+        uncoercer = HubUncoercer.Args(
             spawner=lambda hub: FirstMatchUncoercerWorker(
                 workers=(
                     UuidUncoercerWorker(),
@@ -182,7 +182,7 @@ class TestOpsAndScaffolds(unittest.TestCase):
                     SequenceUncoercerWorker(hub=hub),
                 )
             )
-        )
+        ).build()
         uid = UUID("12345678-1234-5678-1234-567812345678")
         self.assertEqual(uncoercer(value=[uid, 1]), [str(uid), 1])
         self.assertEqual(StandardUncoercer()(value=Path("/tmp")), "/tmp")
@@ -197,7 +197,7 @@ class TestOpsAndScaffolds(unittest.TestCase):
                     raise TypeError({"value": value, "expected_type": str(UUID)})
                 return ValidateResult()
 
-        validator = HubValidator(
+        validator = HubValidator.Args(
             spawner=lambda hub: FirstMatchValidatorWorker(
                 workers=(
                     ListValidatorWorker(hub=hub),
@@ -205,7 +205,7 @@ class TestOpsAndScaffolds(unittest.TestCase):
                     TypeInstanceValidatorWorker(datatype=int),
                 )
             )
-        )
+        ).build()
         uid = UUID("12345678-1234-5678-1234-567812345678")
         validator(value=[uid], dtype=list[UUID])
         with self.assertRaises(TypeError):

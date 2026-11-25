@@ -40,7 +40,7 @@ class StandardUncoercer(UncoercerProtocol):
             active_args.dataclass_dehydrator_factory
             or StandardDataclassDehydratorFactory.Args().build()
         )
-        self.parent = HubUncoercer(
+        self.parent = HubUncoercer.Args(
             spawner=lambda hub: FirstMatchUncoercerWorker(
                 workers=(
                     NoneUncoercerWorker(),
@@ -58,7 +58,7 @@ class StandardUncoercer(UncoercerProtocol):
                     ),
                 )
             )
-        )
+        ).build()
 
     def __call__(self, *, value: Any) -> Any:
         return self.parent(value=value)
