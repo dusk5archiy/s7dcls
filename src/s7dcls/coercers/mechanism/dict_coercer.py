@@ -5,11 +5,13 @@ from typing import Any, get_args, get_origin
 
 from s7dcls.coercers.models import CoerceResult
 from s7dcls.coercers.protocol import CoercerProtocol, JsonCoercerWorkerProtocol
+from s7dcls.error_paths import ErrorBatch
 
 
 @dataclass(kw_only=True, frozen=True)
 class DictCoercerWorker(JsonCoercerWorkerProtocol):
     hub: CoercerProtocol
+    collect_errors: bool = False
 
     def can_handle(self, *, dtype: Any) -> bool:
         return dtype is dict or get_origin(dtype) is dict
@@ -33,12 +35,14 @@ class DictCoercerWorker(JsonCoercerWorkerProtocol):
             return CoerceResult(value=dict(value))
 
         key_type, val_type = get_args(dtype)
-        _results = {}
+        _results: dict[Any, Any] = {}
+        batch = ErrorBatch(collect=self.collect_errors)
         for k, v in value.items():
-            _key = self.hub(value=k, dtype=key_type)
-            _val = self.hub(value=v, dtype=val_type)
-            _results[_key] = _val
-
+            with batch.capture(segment=k):
+                _key = self.hub(value=k, dtype=key_type)
+                _val = self.hub(value=v, dtype=val_type)
+                _results[_key] = _val
+        batch.raise_if_any()
         return CoerceResult(value=_results)
 
 

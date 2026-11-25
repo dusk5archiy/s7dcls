@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import get_args, get_origin
 
+from s7dcls.error_paths import ErrorBatch
+
 from ..models import ValidateResult
 from ..protocol import ValidatorProtocol, ValidatorWorkerProtocol
 
@@ -10,6 +12,7 @@ from ..protocol import ValidatorProtocol, ValidatorWorkerProtocol
 @dataclass(kw_only=True, frozen=True)
 class DictValidatorWorker(ValidatorWorkerProtocol):
     hub: ValidatorProtocol
+    collect_errors: bool = False
 
     def __call__(self, *, value, dtype):
         if dtype is not dict and get_origin(dtype) is not dict:
@@ -28,10 +31,12 @@ class DictValidatorWorker(ValidatorWorkerProtocol):
             return ValidateResult()
 
         key_type, val_type = get_args(dtype)
+        batch = ErrorBatch(collect=self.collect_errors)
         for k, v in value.items():
-            self.hub(value=k, dtype=key_type)
-            self.hub(value=v, dtype=val_type)
-
+            with batch.capture(segment=k):
+                self.hub(value=k, dtype=key_type)
+                self.hub(value=v, dtype=val_type)
+        batch.raise_if_any()
         return ValidateResult()
 
 

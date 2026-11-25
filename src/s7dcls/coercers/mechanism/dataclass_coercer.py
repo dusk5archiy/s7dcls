@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass, is_dataclass
+from dataclasses import dataclass
 from typing import Any
 
 from s7dcls.coercers.models import CoerceResult
 from s7dcls.coercers.protocol import JsonCoercerWorkerProtocol
 from s7dcls.dataclass_hydrators.protocol import DataclassHydratorProtocol
+from s7dcls.type_hints import resolve_dataclass_type
 
 
 @dataclass(kw_only=True, frozen=True)
@@ -14,10 +15,10 @@ class DataclassCoercerWorker(JsonCoercerWorkerProtocol):
     dataclass_hydrator: DataclassHydratorProtocol
 
     def can_handle(self, *, dtype: Any) -> bool:
-        return isinstance(dtype, type) and is_dataclass(dtype)
+        return resolve_dataclass_type(dtype) is not None
 
     def __call__(self, *, value: Any, dtype: Any) -> CoerceResult[Any] | None:
-        if not isinstance(dtype, type) or not is_dataclass(dtype):
+        if resolve_dataclass_type(dtype) is None:
             return None
 
         if not isinstance(value, Mapping):

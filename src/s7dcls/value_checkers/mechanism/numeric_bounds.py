@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Any
 
 from ..protocol import ValueCheckerProtocol
@@ -58,4 +59,18 @@ class Le(ValueCheckerProtocol):
             raise ValueError({"value": value, "constraint": f"<= {self.limit}"})
 
 
-__all__ = ["Ge", "Gt", "Le", "Lt"]
+@dataclass(kw_only=True, frozen=True)
+class MultipleOf(ValueCheckerProtocol):
+    step: int | float
+
+    def __post_init__(self) -> None:
+        if self.step == 0:
+            raise ValueError({"step": self.step, "constraint": "!= 0"})
+
+    def __call__(self, value) -> None:
+        num = _require_number(value)
+        if Decimal(str(num)) % Decimal(str(self.step)) != 0:
+            raise ValueError({"value": value, "constraint": f"% {self.step} == 0"})
+
+
+__all__ = ["Ge", "Gt", "Le", "Lt", "MultipleOf"]

@@ -10,6 +10,8 @@ class PrefixGate(StringGateProtocol):
     prefix: str
 
     def __call__(self, string: str) -> str | None:
+        if not self.prefix:
+            return string
         if string.startswith(self.prefix):
             return string[len(self.prefix) :]
 
@@ -21,6 +23,8 @@ class NoCasePrefixGate(StringGateProtocol):
     prefix: str
 
     def __call__(self, string: str) -> str | None:
+        if not self.prefix:
+            return string
         _normalized_string = string.upper()
         _normalized_prefix = self.prefix.upper()
         if _normalized_string.startswith(_normalized_prefix):

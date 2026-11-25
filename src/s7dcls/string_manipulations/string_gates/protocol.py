@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from s7dcls.type_emitters.protocol import FunctionProtocol
+from s7dcls.protocols import FunctionProtocol
 
 StringGateProtocol = FunctionProtocol[str, str | None]
 

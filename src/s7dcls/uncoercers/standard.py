@@ -4,15 +4,22 @@ from dataclasses import dataclass
 from typing import Any
 
 from s7dcls.dataclass_dehydrators.protocol import DataclassDehydratorFactoryProtocol
-from s7dcls.dataclass_dehydrators.scaffold import ScaffoldDataclassDehydratorFactory
+from s7dcls.dataclass_dehydrators.standard.factory import (
+    StandardDataclassDehydratorFactory,
+)
 
 from .mechanism import (
     DataclassUncoercerWorker,
+    DateTimeUncoercerWorker,
+    DecimalUncoercerWorker,
     DictUncoercerWorker,
+    EnumUncoercerWorker,
     NoneUncoercerWorker,
     PathUncoercerWorker,
     PrimitiveUncoercerWorker,
     SequenceUncoercerWorker,
+    SetUncoercerWorker,
+    UuidUncoercerWorker,
 )
 from .ops import FirstMatchUncoercerWorker
 from .protocol import UncoercerProtocol
@@ -31,15 +38,20 @@ class StandardUncoercer(UncoercerProtocol):
         active_args = args or StandardUncoercer.Args()
         dehydrator_factory = (
             active_args.dataclass_dehydrator_factory
-            or ScaffoldDataclassDehydratorFactory()
+            or StandardDataclassDehydratorFactory.Args().build()
         )
         self.parent = HubUncoercer(
             spawner=lambda hub: FirstMatchUncoercerWorker(
                 workers=(
                     NoneUncoercerWorker(),
+                    EnumUncoercerWorker(hub=hub),
                     PrimitiveUncoercerWorker(),
                     PathUncoercerWorker(),
+                    UuidUncoercerWorker(),
+                    DateTimeUncoercerWorker(),
+                    DecimalUncoercerWorker(),
                     SequenceUncoercerWorker(hub=hub),
+                    SetUncoercerWorker(hub=hub),
                     DictUncoercerWorker(hub=hub),
                     DataclassUncoercerWorker(
                         dataclass_dehydrator=dehydrator_factory(hub)

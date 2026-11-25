@@ -13,10 +13,9 @@ from unittest.mock import patch
 from s7dcls import (
     AggregateDataclassSource,
     AggregateDictFetcher,
-    ChainDataclassFetcher,
-    ChainDataclassHydrator,
     ChainDataclassSource,
     DecoratedDictFetcher,
+    DecoratedStringGate,
     DictFetcherProtocol,
     Gt,
     JsonFileDictLoaderWorker,
@@ -28,13 +27,15 @@ from s7dcls import (
     RawFileDictFetcher,
     RawJsonDictFetcher,
     RawTomlDictFetcher,
-    ScaffoldDataclassDehydratorFactory,
-    ScaffoldDataclassHydratorFactory,
+    ScaffoldDataclassFetcher,
+    ScaffoldDataclassHydrator,
     ScaffoldDataclassKwargsResolver,
     SequenceDictTransform,
     SequenceTransform,
     StandardDataclassDehydrator,
+    StandardDataclassDehydratorFactory,
     StandardDataclassHydrator,
+    StandardDataclassHydratorFactory,
     StandardDataclassSource,
     StandardFileDictFetcher,
     StandardFileDictLoader,
@@ -82,8 +83,11 @@ class RequiredSplitSettings:
 ENV_CLASS_PROJ = SequenceTransform(
     transforms=(PrefixRemover(prefix="_"), UpperTransform())
 )
-ENV_DATA_PROJ = UpperTransform()
 APP_GATE = NoCasePrefixGate(prefix="__APP__")
+APP_UPPER_GATE = DecoratedStringGate(
+    string_gate=APP_GATE,
+    string_transform=UpperTransform(),
+)
 
 STRICT_JSON_KR = ScaffoldDataclassKwargsResolver(
     coercer=StandardJsonCoercer.Args().build(),
@@ -91,13 +95,11 @@ STRICT_JSON_KR = ScaffoldDataclassKwargsResolver(
 ENV_JSON_KR = ScaffoldDataclassKwargsResolver(
     coercer=StandardJsonCoercer.Args().build(),
     class_key_projection=ENV_CLASS_PROJ,
-    data_key_projection=ENV_DATA_PROJ,
     extra_keys_allowed=True,
 )
 ENV_SHELL_KR = ScaffoldDataclassKwargsResolver(
     coercer=StandardStringCoercer.Args().build(),
     class_key_projection=ENV_CLASS_PROJ,
-    data_key_projection=ENV_DATA_PROJ,
     extra_keys_allowed=True,
 )
 
@@ -136,13 +138,12 @@ class TestFileDictLoadersAndFetchersV020(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             fp = Path(tmp) / "app.kv"
             fp.write_text("port=5050\nenabled=true\n", encoding="utf-8")
-            settings = ChainDataclassFetcher(
+            settings = ScaffoldDataclassFetcher(
                 source=StandardDataclassSource.Args(
                     dict_fetcher=RawFileDictFetcher(file=fp, loader=custom_loader),
                     coercer=StandardStringCoercer.Args().build(),
-                ).build(),
-                datacls=SampleSettings,
-            )()
+                ).build()
+            )(datacls=SampleSettings)
             self.assertEqual(settings.port, 5050)
             self.assertTrue(settings.enabled)
 
@@ -240,14 +241,13 @@ class TestFileDictLoadersAndFetchersV020(unittest.TestCase):
             raw = RawTomlDictFetcher(file=fp)()
             self.assertEqual(raw["service"]["port"], 7777)
 
-            settings = ChainDataclassFetcher(
+            settings = ScaffoldDataclassFetcher(
                 source=StandardDataclassSource.Args(
                     dict_fetcher=StandardFileDictFetcher.Args(
                         file=fp, key_path=("service",)
                     ).build()
-                ).build(),
-                datacls=SampleSettings,
-            )()
+                ).build()
+            )(datacls=SampleSettings)
             self.assertEqual(settings._runtime_dir, Path("/opt/run"))
             self.assertEqual(settings.port, 7777)
             self.assertTrue(settings.enabled)
@@ -268,6 +268,8 @@ class TestFileDictLoadersAndFetchersV020(unittest.TestCase):
         )()
         self.assertEqual(exact, {"a": 1})
         self.assertEqual(nocase, {"a": 1, "b": 2})
+        self.assertEqual(PrefixGate(prefix="")("OTHER"), "OTHER")
+        self.assertEqual(NoCasePrefixGate(prefix="")("OTHER"), "OTHER")
 
 
 class TestDataclassKwargsResolversAndSourcesV020(unittest.TestCase):
@@ -285,41 +287,39 @@ class TestDataclassKwargsResolversAndSourcesV020(unittest.TestCase):
             fp.write_text(
                 json.dumps({"port": "7070", "enabled": "true"}), encoding="utf-8"
             )
-            from_json = ChainDataclassFetcher(
+            from_json = ScaffoldDataclassFetcher(
                 source=StandardDataclassSource.Args(
                     dict_fetcher=StandardFileDictFetcher.Args(file=fp).build(),
                     coercer=StandardStringCoercer.Args().build(),
-                ).build(),
-                datacls=SampleSettings,
-            )()
+                ).build()
+            )(datacls=SampleSettings)
             self.assertEqual(from_json.port, 7070)
             self.assertTrue(from_json.enabled)
 
         with patch.dict(
             os.environ, {"__APP__port": "6060", "__APP__enabled": "true"}, clear=True
         ):
-            from_shell = ChainDataclassFetcher(
+            from_shell = ScaffoldDataclassFetcher(
                 source=StandardDataclassSource.Args(
                     dict_fetcher=StandardShellDictFetcher.Args(
                         key_gate=APP_GATE
                     ).build(),
                     coercer=StandardStringCoercer.Args().build(),
-                ).build(),
-                datacls=SampleSettings,
-            )()
+                ).build()
+            )(datacls=SampleSettings)
             self.assertEqual(from_shell.port, 6060)
             self.assertTrue(from_shell.enabled)
 
     def test_reusable_push_with_dict_transform_and_kwargs_resolver(self) -> None:
         svc_cleaner = KeyGateDictTransform(key_gate=PrefixGate(prefix="svc."))
-        app_cleaner = KeyGateDictTransform(key_gate=APP_GATE)
+        app_cleaner = KeyGateDictTransform(key_gate=APP_UPPER_GATE)
 
         partial_1 = STRICT_JSON_KR(
             data=svc_cleaner({"svc.host": "10.0.0.1", "SVC.host": "ignored", "x": 1}),
             datacls=RequiredSplitSettings,
         )
         partial_2 = ENV_SHELL_KR(
-            data=app_cleaner({"__APP__PORT": "443", "__APP__EXTRA": "x"}),
+            data=app_cleaner({"__app__port": "443", "__APP__EXTRA": "x"}),
             datacls=RequiredSplitSettings,
         )
         self.assertEqual(partial_1, {"host": "10.0.0.1"})
@@ -387,25 +387,24 @@ class TestDataclassKwargsResolversAndSourcesV020(unittest.TestCase):
                 "__APP__UNRELATED_KEY": "ignored",
             }
             with patch.dict(os.environ, env, clear=True):
-                settings = ChainDataclassFetcher(
+                settings = ScaffoldDataclassFetcher(
                     source=AggregateDataclassSource(
                         sources=(
                             ChainDataclassSource(
                                 dict_fetcher=StandardFileDictFetcher.Args(
-                                    file=fp, key_gate=APP_GATE
+                                    file=fp, key_gate=APP_UPPER_GATE
                                 ).build(),
                                 kwargs_resolver=ENV_JSON_KR,
                             ),
                             ChainDataclassSource(
                                 dict_fetcher=StandardShellDictFetcher.Args(
-                                    key_gate=APP_GATE
+                                    key_gate=APP_UPPER_GATE
                                 ).build(),
                                 kwargs_resolver=ENV_SHELL_KR,
                             ),
                         )
-                    ),
-                    datacls=SampleSettings,
-                )()
+                    )
+                )(datacls=SampleSettings)
 
             self.assertEqual(settings._runtime_dir, Path("/from/json"))
             self.assertEqual(settings.port, 9090)
@@ -421,7 +420,7 @@ class TestDataclassKwargsResolversAndSourcesV020(unittest.TestCase):
             fp.write_text(json.dumps({"host": "127.0.0.1"}), encoding="utf-8")
 
             with patch.dict(os.environ, {"__APP__PORT": "8088"}, clear=True):
-                settings = ChainDataclassFetcher(
+                settings = ScaffoldDataclassFetcher(
                     source=AggregateDataclassSource(
                         sources=(
                             StandardDataclassSource.Args(
@@ -431,14 +430,13 @@ class TestDataclassKwargsResolversAndSourcesV020(unittest.TestCase):
                             ).build(),
                             ChainDataclassSource(
                                 dict_fetcher=StandardShellDictFetcher.Args(
-                                    key_gate=APP_GATE
+                                    key_gate=APP_UPPER_GATE
                                 ).build(),
                                 kwargs_resolver=ENV_SHELL_KR,
                             ),
                         )
-                    ),
-                    datacls=RequiredSplitSettings,
-                )()
+                    )
+                )(datacls=RequiredSplitSettings)
             self.assertEqual(
                 settings, RequiredSplitSettings(host="127.0.0.1", port=8088)
             )
@@ -449,7 +447,7 @@ class TestDataclassKwargsResolversAndSourcesV020(unittest.TestCase):
             fp.write_text(json.dumps({"port": "8080"}), encoding="utf-8")
 
             with patch.dict(os.environ, {"__APP__ENABLED": "true"}, clear=True):
-                fetcher = ChainDataclassFetcher(
+                fetcher = ScaffoldDataclassFetcher(
                     source=AggregateDataclassSource(
                         sources=(
                             StandardDataclassSource.Args(
@@ -459,22 +457,22 @@ class TestDataclassKwargsResolversAndSourcesV020(unittest.TestCase):
                             ).build(),
                             ChainDataclassSource(
                                 dict_fetcher=StandardShellDictFetcher.Args(
-                                    key_gate=APP_GATE
+                                    key_gate=APP_UPPER_GATE
                                 ).build(),
                                 kwargs_resolver=ENV_SHELL_KR,
                             ),
                         )
-                    ),
-                    datacls=SampleSettings,
+                    )
                 )
                 with self.assertRaises(TypeError):
-                    fetcher()
+                    fetcher(datacls=SampleSettings)
 
     def test_root_key_projection_does_not_leak_into_nested_dataclass(self) -> None:
         shell_source = ChainDataclassSource(
-            dict_fetcher=StandardShellDictFetcher.Args(key_gate=APP_GATE).build(),
+            dict_fetcher=StandardShellDictFetcher.Args(key_gate=APP_UPPER_GATE).build(),
             kwargs_resolver=ENV_SHELL_KR,
         )
+        fetcher = ScaffoldDataclassFetcher(source=shell_source)
 
         with patch.dict(
             os.environ,
@@ -484,47 +482,40 @@ class TestDataclassKwargsResolversAndSourcesV020(unittest.TestCase):
             },
             clear=True,
         ):
-            settings = ChainDataclassFetcher(
-                source=shell_source,
-                datacls=SampleSettings,
-            )()
+            settings = fetcher(datacls=SampleSettings)
             self.assertEqual(settings._runtime_dir, Path("/ok"))
             self.assertEqual(
                 settings.child, NestedChild(_internal_tag="exact", count=2)
             )
 
-        with patch.dict(
-            os.environ,
-            {
-                "__APP__CHILD": json.dumps({"INTERNAL_TAG": "leaked", "COUNT": 2}),
-            },
-            clear=True,
+        with (
+            patch.dict(
+                os.environ,
+                {
+                    "__APP__CHILD": json.dumps({"INTERNAL_TAG": "leaked", "COUNT": 2}),
+                },
+                clear=True,
+            ),
+            self.assertRaises(ValueError),
         ):
-            fetcher = ChainDataclassFetcher(
-                source=shell_source,
-                datacls=SampleSettings,
-            )
-            with self.assertRaises(ValueError):
-                fetcher()
+            fetcher(datacls=SampleSettings)
 
-        with patch.dict(
-            os.environ,
-            {
-                "__APP__CHILD": json.dumps(
-                    {"_internal_tag": "ok", "count": 2, "extra": 1}
-                ),
-            },
-            clear=True,
+        with (
+            patch.dict(
+                os.environ,
+                {
+                    "__APP__CHILD": json.dumps(
+                        {"_internal_tag": "ok", "count": 2, "extra": 1}
+                    ),
+                },
+                clear=True,
+            ),
+            self.assertRaises(ValueError),
         ):
-            fetcher = ChainDataclassFetcher(
-                source=shell_source,
-                datacls=SampleSettings,
-            )
-            with self.assertRaises(ValueError):
-                fetcher()
+            fetcher(datacls=SampleSettings)
 
-    def test_chain_dataclass_hydrator_decouples_root_and_nested(self) -> None:
-        hydrator = ChainDataclassHydrator(kwargs_resolver=ENV_JSON_KR)
+    def test_scaffold_dataclass_hydrator_decouples_root_and_nested(self) -> None:
+        hydrator = ScaffoldDataclassHydrator(kwargs_resolver=ENV_JSON_KR)
 
         result = hydrator(
             data={
@@ -560,7 +551,7 @@ class TestDataclassKwargsResolversAndSourcesV020(unittest.TestCase):
             fp.write_text(json.dumps({"port": "8080"}), encoding="utf-8")
 
             with patch.dict(os.environ, {"__APP__PORT": "9090"}, clear=True):
-                fetcher = ChainDataclassFetcher(
+                fetcher = ScaffoldDataclassFetcher(
                     source=AggregateDataclassSource(
                         sources=(
                             StandardDataclassSource.Args(
@@ -570,16 +561,15 @@ class TestDataclassKwargsResolversAndSourcesV020(unittest.TestCase):
                             ).build(),
                             ChainDataclassSource(
                                 dict_fetcher=StandardShellDictFetcher.Args(
-                                    key_gate=APP_GATE
+                                    key_gate=APP_UPPER_GATE
                                 ).build(),
                                 kwargs_resolver=ENV_SHELL_KR,
                             ),
                         )
-                    ),
-                    datacls=SampleSettings,
+                    )
                 )
                 with self.assertRaises(TypeError):
-                    fetcher()
+                    fetcher(datacls=SampleSettings)
 
     def test_custom_callable_source_returns_python_objects_directly(self) -> None:
         def direct_source(*, datacls: type[Any]) -> Mapping[str, Any]:
@@ -591,7 +581,7 @@ class TestDataclassKwargsResolversAndSourcesV020(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             fp = Path(tmp) / "override.json"
             fp.write_text(json.dumps({"port": 5555}), encoding="utf-8")
-            settings = ChainDataclassFetcher(
+            settings = ScaffoldDataclassFetcher(
                 source=AggregateDataclassSource(
                     sources=(
                         direct_source,
@@ -599,9 +589,8 @@ class TestDataclassKwargsResolversAndSourcesV020(unittest.TestCase):
                             dict_fetcher=StandardFileDictFetcher.Args(file=fp).build()
                         ).build(),
                     )
-                ),
-                datacls=SampleSettings,
-            )()
+                )
+            )(datacls=SampleSettings)
         self.assertEqual(settings._runtime_dir, Path("/direct"))
         self.assertEqual(settings.port, 5555)
         self.assertEqual(settings.child, NestedChild(_internal_tag="direct", count=9))
@@ -629,21 +618,20 @@ class TestDataclassKwargsResolversAndSourcesV020(unittest.TestCase):
                     combined(datacls=RequiredSplitSettings),
                     {"host": "127.0.0.1", "port": 9999},
                 )
-                settings = ChainDataclassFetcher(
-                    source=combined,
-                    datacls=RequiredSplitSettings,
-                )()
+                settings = ScaffoldDataclassFetcher(source=combined)(
+                    datacls=RequiredSplitSettings
+                )
             self.assertEqual(
                 settings, RequiredSplitSettings(host="127.0.0.1", port=9999)
             )
 
     def test_nested_dataclass_hydrator_factory_controls_extra_keys_policy(self) -> None:
         permissive_coercer = StandardJsonCoercer.Args(
-            dataclass_hydrator_factory=ScaffoldDataclassHydratorFactory(
+            dataclass_hydrator_factory=StandardDataclassHydratorFactory.Args(
                 extra_keys_allowed=True
-            ),
+            ).build(),
         ).build()
-        hydrator = ChainDataclassHydrator(
+        hydrator = ScaffoldDataclassHydrator(
             kwargs_resolver=ScaffoldDataclassKwargsResolver(coercer=permissive_coercer),
         )
 
@@ -675,9 +663,9 @@ class TestDataclassKwargsResolversAndSourcesV020(unittest.TestCase):
         )
 
         uncoercer = StandardUncoercer.Args(
-            dataclass_dehydrator_factory=ScaffoldDataclassDehydratorFactory(
+            dataclass_dehydrator_factory=StandardDataclassDehydratorFactory.Args(
                 class_key_projection=PrefixRemover(prefix="_")
-            )
+            ).build()
         ).build()
         projected = uncoercer(value=instance)
         self.assertEqual(projected["runtime_dir"], "/run/sim")

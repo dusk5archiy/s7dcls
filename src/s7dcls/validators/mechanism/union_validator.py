@@ -24,7 +24,7 @@ class UnionValidatorWorker(ValidatorWorkerProtocol):
             try:
                 self.hub(value=value, dtype=arg)
                 return ValidateResult()
-            except (ValueError, TypeError) as e:
+            except (ValueError, TypeError, ExceptionGroup) as e:
                 errors.append(e)
                 continue
 

@@ -9,8 +9,12 @@ from s7dcls.value_checkers.mechanism import (
     IntervalRangeValueChecker,
     Le,
     Lt,
+    MaxLen,
+    MinLen,
+    MultipleOf,
     NonEmptyStr,
     RegexMatch,
+    UniqueItems,
 )
 
 from ..models import DescribeTypeResult
@@ -40,6 +44,14 @@ class AnnotatedTypeDescriberWorker(TypeDescriberWorkerProtocol):
                 schema["max"] = extra.limit
             elif isinstance(extra, Lt):
                 schema["lt"] = extra.limit
+            elif isinstance(extra, MultipleOf):
+                schema["multiple_of"] = extra.step
+            elif isinstance(extra, MinLen):
+                schema["min_length"] = extra.limit
+            elif isinstance(extra, MaxLen):
+                schema["max_length"] = extra.limit
+            elif isinstance(extra, UniqueItems):
+                schema["unique_items"] = True
             elif isinstance(extra, NonEmptyStr):
                 schema["non_empty"] = True
             elif isinstance(extra, RegexMatch):

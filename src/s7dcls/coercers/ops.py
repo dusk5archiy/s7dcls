@@ -29,7 +29,7 @@ class FallbackCoercer(CoercerProtocol):
         for coercer in self.coercers:
             try:
                 return coercer(value=value, dtype=dtype)
-            except (TypeError, ValueError) as e:
+            except (TypeError, ValueError, ExceptionGroup) as e:
                 errors.append(e)
 
         if errors:

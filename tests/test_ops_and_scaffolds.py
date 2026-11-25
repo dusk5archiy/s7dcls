@@ -12,6 +12,7 @@ from s7dcls import (
     AnyValueChecker,
     CoerceResult,
     DescribeTypeResult,
+    ErrorPath,
     FallbackCoercer,
     FirstMatchCoercerWorker,
     FirstMatchFileDictLoaderWorker,
@@ -28,6 +29,8 @@ from s7dcls import (
     Le,
     Lt,
     ScaffoldFileDictLoader,
+    StandardDataclassDehydrator,
+    StandardDataclassHydrator,
     StandardJsonCoercer,
     StandardStringCoercer,
     StandardTypeDescriber,
@@ -36,6 +39,7 @@ from s7dcls import (
     TomlFileDictLoaderWorker,
     UncoerceResult,
     ValidateResult,
+    validate,
 )
 from s7dcls.coercers.mechanism import (
     AnyCoercerWorker,
@@ -51,6 +55,32 @@ from s7dcls.uncoercers.mechanism import (
     SequenceUncoercerWorker,
 )
 from s7dcls.validators.mechanism import ListValidatorWorker, TypeInstanceValidatorWorker
+
+
+@dataclass(kw_only=True, frozen=True)
+class _PathLeaf:
+    port: Annotated[int, Gt(limit=0)]
+
+
+@dataclass(kw_only=True, frozen=True)
+class _PathGroup:
+    items: tuple[_PathLeaf, ...]
+
+
+@dataclass(kw_only=True, frozen=True)
+class _PathRoot:
+    groups: dict[str, list[_PathGroup]]
+
+
+@validate
+@dataclass(kw_only=True, frozen=True)
+class _CheckedRoot:
+    items: list[_PathLeaf]
+
+
+@dataclass(kw_only=True, frozen=True)
+class _BadDehydrate:
+    entries: dict[str, list[Any]]
 
 
 class TestOpsAndScaffolds(unittest.TestCase):
@@ -248,6 +278,60 @@ class TestOpsAndScaffolds(unittest.TestCase):
             coercer(value=5, dtype=dtype)
         with self.assertRaises(ValueError):
             validator(value=5, dtype=dtype)
+
+    def test_nested_error_paths_across_coercer_validator_and_dehydrator(self) -> None:
+        hydrator = StandardDataclassHydrator.Args().build()
+        with self.assertRaises(ValueError) as ctx:
+            hydrator(
+                data={
+                    "groups": {
+                        "alpha": [
+                            {"items": [{"port": 80}, {"port": 0}]},
+                        ]
+                    }
+                },
+                datacls=_PathRoot,
+            )
+        self.assertEqual(
+            ctx.exception.args[0]["path"],
+            ("groups", "alpha", 0, "items", 1, "port"),
+        )
+        self.assertEqual(ctx.exception.args[0]["value"], 0)
+        self.assertEqual(ctx.exception.args[0]["constraint"], "> 0")
+
+        bad_root = _PathRoot(
+            groups={
+                "alpha": [_PathGroup(items=(_PathLeaf(port=80), _PathLeaf(port=-3)))]
+            }
+        )
+        validator = StandardValidator.Args().build()
+        with self.assertRaises(ValueError) as vctx:
+            validator(value=bad_root, dtype=_PathRoot)
+        self.assertEqual(
+            vctx.exception.args[0]["path"],
+            ("groups", "alpha", 0, "items", 1, "port"),
+        )
+
+        with self.assertRaises(ValueError) as dctx:
+            _CheckedRoot(items=[_PathLeaf(port=1), _PathLeaf(port=0)])
+        self.assertEqual(dctx.exception.args[0]["path"], ("items", 1, "port"))
+
+        class Unsupported:
+            pass
+
+        dehydrator = StandardDataclassDehydrator.Args().build()
+        with self.assertRaises(TypeError) as uctx:
+            dehydrator(instance=_BadDehydrate(entries={"k": [1, Unsupported()]}))
+        self.assertEqual(uctx.exception.args[0]["path"], ("entries", "k", 1))
+
+        reusable = ErrorPath(segment=True)
+        for _ in range(2):
+            with self.assertRaises(ValueError) as rctx, reusable:
+                raise ValueError({"value": 1})
+            self.assertEqual(rctx.exception.args[0]["path"], ("True",))
+        err = ValueError({"value": 1, "path": ("True",)})
+        ErrorPath.prepend(exc=err, segment="outer")
+        self.assertEqual(err.args[0]["path"], ("outer", "True"))
 
 
 if __name__ == "__main__":

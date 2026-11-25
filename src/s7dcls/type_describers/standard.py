@@ -1,18 +1,24 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date, datetime, timedelta
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
+from uuid import UUID
 
 from .mechanism import (
     AnnotatedTypeDescriberWorker,
     AnyTypeDescriberWorker,
     DataclassTypeDescriberWorker,
     DictTypeDescriberWorker,
+    EnumTypeDescriberWorker,
     ListTypeDescriberWorker,
     LiteralTypeDescriberWorker,
     NoneTypeDescriberWorker,
+    SetTypeDescriberWorker,
     TupleTypeDescriberWorker,
+    TypeAliasTypeDescriberWorker,
     TypeInstanceDescriberWorker,
     UnionTypeDescriberWorker,
 )
@@ -34,17 +40,29 @@ class StandardTypeDescriber(TypeDescriberProtocol):
         self.parent = HubTypeDescriber(
             spawner=lambda hub: FirstMatchTypeDescriberWorker(
                 workers=(
+                    TypeAliasTypeDescriberWorker(hub=hub),
                     AnyTypeDescriberWorker(),
                     AnnotatedTypeDescriberWorker(hub=hub),
                     UnionTypeDescriberWorker(hub=hub),
                     LiteralTypeDescriberWorker(),
                     NoneTypeDescriberWorker(),
+                    EnumTypeDescriberWorker(),
                     TypeInstanceDescriberWorker(datatype=bool, type_name="bool"),
                     TypeInstanceDescriberWorker(datatype=int, type_name="int"),
                     TypeInstanceDescriberWorker(datatype=float, type_name="float"),
                     TypeInstanceDescriberWorker(datatype=str, type_name="str"),
                     TypeInstanceDescriberWorker(datatype=Path, type_name="path"),
+                    TypeInstanceDescriberWorker(datatype=UUID, type_name="uuid"),
+                    TypeInstanceDescriberWorker(
+                        datatype=datetime, type_name="datetime"
+                    ),
+                    TypeInstanceDescriberWorker(datatype=date, type_name="date"),
+                    TypeInstanceDescriberWorker(
+                        datatype=timedelta, type_name="timedelta"
+                    ),
+                    TypeInstanceDescriberWorker(datatype=Decimal, type_name="decimal"),
                     ListTypeDescriberWorker(hub=hub),
+                    SetTypeDescriberWorker(hub=hub),
                     TupleTypeDescriberWorker(hub=hub),
                     DictTypeDescriberWorker(hub=hub),
                     DataclassTypeDescriberWorker(

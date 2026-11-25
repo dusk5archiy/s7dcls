@@ -3,9 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass, fields, is_dataclass
 from typing import TYPE_CHECKING, Any
 
-from s7dcls.type_emitters.protocol import TransformProtocol
+from s7dcls.error_paths import ErrorPath
+from s7dcls.protocols import TransformProtocol
 
-from .protocol import DataclassDehydratorFactoryProtocol, DataclassDehydratorProtocol
+from .protocol import DataclassDehydratorProtocol
 
 if TYPE_CHECKING:
     from _typeshed import DataclassInstance
@@ -34,27 +35,16 @@ class ScaffoldDataclassDehydrator(DataclassDehydratorProtocol):
             if not self.include_non_init and not definition.init:
                 continue
 
-            key = definition.name
+            alias = definition.metadata.get("alias")
+            key = alias if isinstance(alias, str) else definition.name
             if self.class_key_projection is not None:
                 key = self.class_key_projection(key)
 
             raw_value = getattr(instance, definition.name)
-            result[key] = self.uncoercer(value=raw_value)
+            with ErrorPath(segment=definition.name):
+                result[key] = self.uncoercer(value=raw_value)
 
         return result
 
 
-@dataclass(kw_only=True, frozen=True)
-class ScaffoldDataclassDehydratorFactory(DataclassDehydratorFactoryProtocol):
-    class_key_projection: TransformProtocol[str] | None = None
-    include_non_init: bool = False
-
-    def __call__(self, uncoercer: UncoercerProtocol) -> DataclassDehydratorProtocol:
-        return ScaffoldDataclassDehydrator(
-            uncoercer=uncoercer,
-            class_key_projection=self.class_key_projection,
-            include_non_init=self.include_non_init,
-        )
-
-
-__all__ = ["ScaffoldDataclassDehydrator", "ScaffoldDataclassDehydratorFactory"]
+__all__ = ["ScaffoldDataclassDehydrator"]

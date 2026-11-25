@@ -23,7 +23,7 @@ class UnionCoercerWorker(CoercerWorkerProtocol):
         for arg in args:
             try:
                 return CoerceResult(value=self.hub(value=value, dtype=arg))
-            except (ValueError, TypeError) as e:
+            except (ValueError, TypeError, ExceptionGroup) as e:
                 errors.append(e)
                 continue
 

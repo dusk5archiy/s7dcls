@@ -1,16 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Protocol
-
-if TYPE_CHECKING:
-    from _typeshed import DataclassInstance
+from typing import Protocol
 
 
 class EmitterProtocol[T](Protocol):
-    def __call__(self) -> T: ...
-
-
-class DataclassEmitterProtocol[T: DataclassInstance](Protocol):
     def __call__(self) -> T: ...
 
 
@@ -27,7 +20,6 @@ class SwallowerProtocol[T](Protocol):
 
 
 __all__ = [
-    "DataclassEmitterProtocol",
     "EmitterProtocol",
     "FunctionProtocol",
     "SwallowerProtocol",

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from s7dcls.type_emitters.protocol import TransformProtocol
+from s7dcls.protocols import TransformProtocol
 
 StringTransformProtocol = TransformProtocol[str]
 

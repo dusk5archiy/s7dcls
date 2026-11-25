@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from .protocol import DataclassDehydratorProtocol
-from .scaffold import ScaffoldDataclassDehydrator
+from ..protocol import DataclassDehydratorProtocol
+from ..scaffold import ScaffoldDataclassDehydrator
 
 if TYPE_CHECKING:
     from _typeshed import DataclassInstance

@@ -6,10 +6,12 @@ from .dataclass_kwargs_resolvers import *
 from .dataclass_sources import *
 from .dict_fetchers import *
 from .dict_transforms import *
+from .error_paths import *
 from .file_dict_loaders import *
+from .protocols import *
+from .schema_describers import *
 from .string_manipulations import *
 from .type_describers import *
-from .type_emitters import *
 from .type_hints import *
 from .uncoercers import *
 from .validators import *

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from s7dcls.error_paths import ErrorPath
 from s7dcls.uncoercers.models import UncoerceResult
 from s7dcls.uncoercers.protocol import UncoercerProtocol, UncoercerWorkerProtocol
 
@@ -23,7 +24,8 @@ class DictUncoercerWorker(UncoercerWorkerProtocol):
                         "got_type": str(type(k)),
                     }
                 )
-            result[k] = self.hub(value=v)
+            with ErrorPath(segment=k):
+                result[k] = self.hub(value=v)
         return UncoerceResult(value=result)
 
 

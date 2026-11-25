@@ -26,7 +26,7 @@ class AnyValueChecker(ValueCheckerProtocol):
             try:
                 checker(value)
                 return
-            except (TypeError, ValueError) as e:
+            except (TypeError, ValueError, ExceptionGroup) as e:
                 errors.append(e)
 
         if errors:

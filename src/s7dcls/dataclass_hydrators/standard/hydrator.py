@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING, Any
 
 from s7dcls.dataclass_kwargs_resolvers.scaffold import ScaffoldDataclassKwargsResolver
 
-from .protocol import DataclassHydratorProtocol
-from .scaffold import ChainDataclassHydrator
+from ..protocol import DataclassHydratorProtocol
+from ..scaffold import ScaffoldDataclassHydrator
 
 if TYPE_CHECKING:
     from _typeshed import DataclassInstance
@@ -19,6 +19,7 @@ class StandardDataclassHydrator(DataclassHydratorProtocol):
     @dataclass(kw_only=True, frozen=True)
     class Args:
         coercer: CoercerProtocol | None = None
+        collect_errors: bool = False
 
         def build(self) -> StandardDataclassHydrator:
             return StandardDataclassHydrator(self)
@@ -29,10 +30,16 @@ class StandardDataclassHydrator(DataclassHydratorProtocol):
         if coercer is None:
             from s7dcls.coercers.standard import StandardJsonCoercer
 
-            coercer = StandardJsonCoercer.Args().build()
+            coercer = StandardJsonCoercer.Args(
+                collect_errors=active_args.collect_errors
+            ).build()
 
-        self.parent = ChainDataclassHydrator(
-            kwargs_resolver=ScaffoldDataclassKwargsResolver(coercer=coercer)
+        self.parent = ScaffoldDataclassHydrator(
+            kwargs_resolver=ScaffoldDataclassKwargsResolver(
+                coercer=coercer,
+                collect_errors=active_args.collect_errors,
+            ),
+            collect_errors=active_args.collect_errors,
         )
 
     def __call__[T: DataclassInstance](

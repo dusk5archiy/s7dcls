@@ -5,8 +5,9 @@ from dataclasses import Field, dataclass, fields
 from typing import TYPE_CHECKING, Any
 
 from s7dcls.coercers.protocol import CoercerProtocol
-from s7dcls.type_emitters.protocol import TransformProtocol
-from s7dcls.type_hints import get_cached_type_hints
+from s7dcls.error_paths import ErrorBatch
+from s7dcls.protocols import TransformProtocol
+from s7dcls.type_hints import resolve_dataclass_type
 
 from .protocol import DataclassKwargsResolverProtocol
 
@@ -18,8 +19,8 @@ if TYPE_CHECKING:
 class ScaffoldDataclassKwargsResolver(DataclassKwargsResolverProtocol):
     coercer: CoercerProtocol
     class_key_projection: TransformProtocol[str] | None = None
-    data_key_projection: TransformProtocol[str] | None = None
     extra_keys_allowed: bool = False
+    collect_errors: bool = False
 
     def __call__(
         self,
@@ -27,44 +28,50 @@ class ScaffoldDataclassKwargsResolver(DataclassKwargsResolverProtocol):
         data: Mapping[str, Any],
         datacls: type[DataclassInstance],
     ) -> dict[str, Any]:
+        resolved = resolve_dataclass_type(datacls)
+        if resolved is None:
+            raise TypeError(
+                {
+                    "dtype": str(datacls),
+                    "expected_type": "dataclass",
+                    "got_type": str(type(datacls)),
+                }
+            )
+        actual_cls, type_hints = resolved
+
         projected_key_to_definition: dict[str, Field[Any]] = {}
 
-        for definition in fields(datacls):
+        for definition in fields(actual_cls):
             if not definition.init:
                 continue
 
-            _projected_key = definition.name
+            alias = definition.metadata.get("alias")
+            _projected_key = alias if isinstance(alias, str) else definition.name
             if self.class_key_projection is not None:
                 _projected_key = self.class_key_projection(_projected_key)
 
             projected_key_to_definition[_projected_key] = definition
 
-        projected_key_to_data_value: dict[str, Any] = {}
-        for data_key, data_value in data.items():
-            _projected_key = data_key
-            if self.data_key_projection is not None:
-                _projected_key = self.data_key_projection(data_key)
-
-            projected_key_to_data_value[_projected_key] = data_value
-
+        batch = ErrorBatch(collect=self.collect_errors)
         if not self.extra_keys_allowed:
-            unknown = sorted(
-                set(projected_key_to_data_value) - set(projected_key_to_definition)
-            )
+            unknown = sorted(set(data) - set(projected_key_to_definition))
             if unknown:
-                raise ValueError({"expected_type": str(datacls), "unknown": unknown})
+                batch.add(
+                    exc=ValueError({"expected_type": str(datacls), "unknown": unknown})
+                )
 
-        type_hints = get_cached_type_hints(datacls)
         kwargs: dict[str, Any] = {}
 
-        for projected_key, data_value in projected_key_to_data_value.items():
-            _definition = projected_key_to_definition.get(projected_key)
+        for data_key, data_value in data.items():
+            _definition = projected_key_to_definition.get(data_key)
             if _definition is None:
                 continue
 
             _dtype = type_hints.get(_definition.name, _definition.type)
-            kwargs[_definition.name] = self.coercer(value=data_value, dtype=_dtype)
+            with batch.capture(segment=_definition.name):
+                kwargs[_definition.name] = self.coercer(value=data_value, dtype=_dtype)
 
+        batch.raise_if_any()
         return kwargs
 
 
